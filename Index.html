@@ -1,0 +1,4800 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Budget Planner</title>
+    <!-- Poppins font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        /* Reset and base styles */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9f9f9;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --border-color: #dddddd;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --table-header: #f2f2f2;
+            --input-bg: #ffffff;
+            --input-text: #333333;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --primary-color: #3182ce;
+            --button-hover: #2c5282;
+            /* Banner Variables */
+            --header-bg: #1e3a5f;
+            --header-text: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #001233;
+            --bg-secondary: #112240;
+            --text-primary: #ebf2fa;
+            --text-secondary: #a9d6e5;
+            --border-color: #233554;
+            --shadow-color: rgba(2, 12, 27, 0.7);
+            --table-header: #1d2d50;
+            --input-bg: #33415c;
+            --input-text: #ebf2fa;
+            --success-color: #00b894;
+            --danger-color: #ff7675;
+            --primary-color: #4299e1;
+            --button-hover: #2b6cb0;
+            /* Banner Variables */
+            --header-bg: #1a202c;
+            --header-text: #ffffff;
+        }
+
+        body {
+            font-family: 'Poppins', Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            /* Reset padding */
+            transition: background-color 0.3s, color 0.3s;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            /* Re-apply padding here */
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            box-shadow: 0 0 10px var(--shadow-color);
+        }
+
+        /* Input styles */
+        input,
+        select {
+            background-color: var(--input-bg);
+            color: var(--input-text);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 8px;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+
+        /* Banner styles */
+        .site-banner {
+            background-color: var(--header-bg);
+            color: var(--header-text);
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            text-align: center;
+        }
+
+        .banner-logo img {
+            height: 50px;
+            width: auto;
+            display: block;
+            max-width: 100%;
+        }
+
+        .banner-text {
+            font-size: 1.6em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            line-height: 1.2;
+        }
+
+        /* Header styles */
+        .header {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .toggle-theme {
+            cursor: pointer;
+            font-size: 20px;
+            margin-left: 15px;
+        }
+
+        /* Input group styles */
+        .input-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .input-group label {
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .input-group input {
+            padding: 8px;
+            flex-grow: 1;
+            min-width: 150px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+
+        /* Table styles */
+        .table-container {
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            overflow: hidden;
+            /* Keep for border-radius */
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px var(--shadow-color);
+            overflow: hidden;
+            border-radius: 4px;
+            table-layout: fixed;
+
+        }
+
+        th,
+        td {
+            border: 1px solid var(--border-color);
+            padding: 10px 12px;
+            text-align: left;
+            color: var(--text-primary);
+            vertical-align: middle;
+            word-wrap: break-word;
+            /* ADD THIS LINE - Helps break long words if needed */
+            overflow-wrap: break-word;
+            /* Modern equivalent */
+        }
+
+        th {
+            background-color: var(--table-header);
+            font-weight: 600;
+        }
+
+        td input[type="date"],
+        td input[type="text"],
+        td input[type="number"] {
+            width: 95%;
+            box-sizing: border-box;
+            margin: -5px 0;
+        }
+
+        /* --- START: Add Rules for Cell Overflow Control --- */
+        td[data-label="Category"],
+        td[data-label="Description"] {
+            /* Apply overflow control to cells that might get long content */
+            overflow: hidden;
+            white-space: nowrap;
+            /* Prevent wrapping that might still break layout */
+            text-overflow: ellipsis;
+            /* Show "..." if content overflows */
+        }
+
+        /* Target the select element and text input specifically */
+        td select.category-select,
+        td input.description-input {
+            width: 100%;
+            /* Let them fill the cell width defined by table-layout */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            /* Ensure text doesn't wrap inside input */
+            padding-right: 25px;
+            /* Make space for dropdown arrow if select */
+            box-sizing: border-box;
+            /* Ensure padding is included */
+            min-width: 0;
+            /* Allow shrinking */
+        }
+
+        td select.category-select {
+            /* Appearance reset might be needed for consistent look */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23666666%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.4-12.8z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat;
+            background-position: right 8px top 50%;
+            background-size: .65em auto;
+            padding-right: 25px;
+            /* Ensure space for arrow */
+        }
+
+        [data-theme="dark"] td select.category-select {
+            /* Dark mode arrow */
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23a9d6e5%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.4-12.8z%22%2F%3E%3C%2Fsvg%3E');
+        }
+
+        /* Ensure date/number inputs also behave */
+        td[data-label="Recurring"],
+        td[data-label="Actions"].delete-btn {
+            /* Also target .delete-btn class for specificity */
+            text-align: center;
+            /* Center horizontally */
+            vertical-align: middle;
+            /* Center vertically */
+        }
+
+        /* Ensure the label containing the checkbox behaves correctly for centering */
+        td[data-label="Recurring"] .recurring-checkbox-label {
+            display: inline-flex;
+            /* Treat label like an inline block, keeping input inside */
+            justify-content: center;
+            /* Center checkbox within the label space if needed */
+            margin-left: 0;
+            /* Remove the specific margin added earlier */
+            padding: 0;
+            /* Remove padding if any */
+            width: 100%;
+            /* Allow the label's container to center within the TD */
+        }
+
+        @media (max-width: 768px) {
+
+            td[data-label="Recurring"],
+            td[data-label="Actions"] {
+                justify-content: center;
+                /* Override the default space-between for these cells */
+                /* Padding might need adjustment if content looks cramped */
+                padding-top: 10px;
+                padding-bottom: 10px;
+            }
+
+            /* Hide the "Recurring:" and "Actions:" text labels on mobile for centered cells */
+            td[data-label="Recurring"]::before,
+            td[data-label="Actions"]::before {
+                display: none;
+            }
+
+            /* Ensure label takes minimal space on mobile */
+            td[data-label="Recurring"] .recurring-checkbox-label {
+                width: auto;
+                /* Don't force full width */
+                margin: 0;
+                /* Reset margin */
+            }
+        }
+
+        td input[type="date"],
+        td input[type="number"] {
+            width: 100%;
+            min-width: 0;
+            /* Allow shrinking */
+            box-sizing: border-box;
+        }
+
+        td input[type="number"] {
+            text-align: right;
+            /* Keep numbers right-aligned */
+        }
+
+        /* --- END: Add Rules for Cell Overflow Control --- */
+
+        th {
+            background-color: var(--table-header);
+            font-weight: 600;
+            text-align: center;
+           
+        }
+
+        td input[type="date"],
+        td input[type="text"],
+        td input[type="number"] {
+            /* width: 95%; */
+            /* REMOVED - Let specific rules above handle width */
+            box-sizing: border-box;
+            margin: -5px 0;
+            /* Keep negative margin for alignment if needed */
+        }
+
+        .delete-btn {
+            color: var(--danger-color);
+            cursor: pointer;
+            font-weight: bold;
+            text-align: center;
+            font-size: 1.1em;
+            transition: color 0.2s ease;
+        }
+
+        .delete-btn:hover {
+            color: #c0392b;
+        }
+
+        [data-theme="dark"] .delete-btn:hover {
+            color: #ff4d4d;
+        }
+
+        /* Footer styles */
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.9em;
+            color: var(--text-secondary);
+        }
+
+        /* Amount styling */
+        .positive-amount {
+            color: var(--success-color);
+            font-weight: bold;
+        }
+
+        .negative-amount {
+            color: var(--danger-color);
+            font-weight: bold;
+        }
+
+        /* Button styles */
+        button {
+            background-color: var(--primary-color);
+            color: var(--header-text);
+            border: none;
+            padding: 10px 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px 10px 0;
+            font-weight: 600;
+            font-family: inherit;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+
+        button:hover {
+            background-color: var(--button-hover);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0px);
+        }
+
+        .print-btn {
+            background-color: var(--success-color);
+        }
+
+        .print-btn:hover {
+            background-color: #27ae60;
+        }
+
+        .danger-btn {
+            background-color: var(--danger-color);
+        }
+
+        .danger-btn:hover {
+            background-color: #c0392b;
+        }
+
+        .budget-insights-btn {
+            /* Renamed from 'Replace Recurring Button' comment */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background-color: var(--primary-color);
+        }
+
+        .budget-insights-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Progress bar styles */
+        .progress-container {
+            margin-top: 30px;
+            padding: 0;
+            background: none;
+            border: none;
+        }
+
+        .progress-container h3 {
+            font-size: 1.2em;
+            text-align: left;
+            border-bottom: none;
+            margin-bottom: 10px;
+            padding-bottom: 0;
+            color: var(--text-primary);
+        }
+
+        .progress-goal-display {
+            text-align: right;
+            font-size: 0.95em;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .progress-goal-display span:last-child {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-left: 5px;
+        }
+
+        .progress-bar-wrapper {
+            position: relative;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 24px;
+            background-color: var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 0;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] .progress-bar {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background-color: var(--success-color);
+            transition: width 0.6s ease-out, background-color 0.4s ease;
+            border-radius: 12px 0 0 12px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill[style*="100%"] {
+            border-radius: 12px;
+        }
+
+        .progress-fill.low {
+            background-color: var(--danger-color) !important;
+        }
+
+        .progress-fill.medium {
+            background-color: #f59e0b !important;
+        }
+
+        .progress-fill.high {
+            background-color: var(--success-color) !important;
+        }
+
+        .progress-percentage {
+            color: white;
+            font-weight: 600;
+            font-size: 0.8em;
+            padding: 0 10px;
+            line-height: 24px;
+            text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
+            white-space: nowrap;
+            position: absolute;
+            right: 10px;
+            top: 0;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Hide percentage if fill is very small */
+        .progress-fill[style*="width: 0%"] .progress-percentage,
+        .progress-fill[style*="width: 1%"] .progress-percentage,
+        .progress-fill[style*="width: 2%"] .progress-percentage,
+        .progress-fill[style*="width: 3%"] .progress-percentage,
+        .progress-fill[style*="width: 4%"] .progress-percentage,
+        .progress-fill[style*="width: 5%"] .progress-percentage,
+        .progress-fill[style*="width: 6%"] .progress-percentage,
+        .progress-fill[style*="width: 7%"] .progress-percentage {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .progress-labels {
+            display: flex;
+            justify-content: flex-end;
+            font-size: 0.9em;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        #progress-amount-text {
+            font-weight: 500;
+        }
+
+        /* Recurring checkbox */
+        .recurring-checkbox-label {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+            /* Keeps it aligned in table cell */
+        }
+
+        input[type="checkbox"].recurring-checkbox {
+            width: auto;
+            height: auto;
+            margin: 0;
+            accent-color: var(--primary-color);
+        }
+
+        /* Summary Section */
+        .recap-progress-group {
+            /* Keep wrapper for consistency */
+            margin-top: 30px;
+            padding: 20px;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+
+        .recap-progress-group h3 {
+            font-size: 1.4em;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--primary-color);
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            /* Adjusted minmax */
+            gap: 20px;
+            /* Increased gap */
+            margin-bottom: 25px;
+            /* Increased margin */
+        }
+
+        .summary-item {
+            padding: 20px;
+            /* Increased padding */
+            background-color: var(--bg-primary);
+            border-radius: 8px;
+            box-shadow: 0 2px 5px var(--shadow-color);
+            /* Slightly enhanced shadow */
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border-color);
+        }
+
+        .summary-label {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            /* Increased gap */
+            margin-bottom: 8px;
+            /* Increased margin */
+        }
+
+        .summary-label svg {
+            width: 18px;
+            /* Slightly larger icons */
+            height: 18px;
+            flex-shrink: 0;
+            /* Prevent icon shrinking */
+        }
+
+        .summary-value {
+            font-size: 1.6em;
+            /* Increased size */
+            font-weight: 600;
+            margin-top: auto;
+            /* Push value to bottom if label wraps */
+        }
+
+        .summary-net {
+            background-color: var(--bg-primary);
+            border-radius: 8px;
+            padding: 25px;
+            /* Increased padding */
+            margin-bottom: 30px;
+            /* Increased margin */
+            box-shadow: 0 2px 5px var(--shadow-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .summary-label-main {
+            font-size: 1.3em;
+            /* Increased size */
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .summary-value-main {
+            font-size: 2.2em;
+            /* Increased size */
+            font-weight: 700;
+        }
+
+        /* Ensure positive/negative colors apply here too */
+        .summary-value-main.positive-amount {
+            color: var(--success-color);
+        }
+
+        .summary-value-main.negative-amount {
+            color: var(--danger-color);
+        }
+
+
+        /* Toast notifications */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+            /* Ensure it's above most elements */
+            width: auto;
+            max-width: 300px;
+        }
+
+        .toast {
+            background-color: rgba(50, 50, 50, 0.9);
+            color: white;
+            padding: 12px 20px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.4s ease-in-out;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            background-color: rgba(46, 204, 113, 0.9);
+        }
+
+        .toast.error {
+            background-color: rgba(231, 76, 60, 0.9);
+        }
+
+        .toast.info {
+            background-color: rgba(52, 152, 219, 0.9);
+        }
+
+        .toast svg {
+            width: 1.2em;
+            height: 1.2em;
+        }
+
+        /* --- Consolidated & Cleaned Analysis Section --- */
+
+        .analysis-section {
+            max-width: 100%;
+            margin: 35px auto;
+            border-radius: 12px;
+            background-color: var(--bg-primary);
+            box-shadow: 0 2px 10px var(--shadow-color);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            padding: 0;
+            /* Content divs handle padding */
+        }
+
+        .analysis-section h3 {
+            /* Main "Budget Analysis" Title */
+            margin: 0 0 15px 0;
+            /* Space below title */
+            padding: 0;
+            text-align: center;
+            font-size: 1.6em;
+            color: var(--primary-color);
+            border-bottom: none;
+            background-color: Transparent;
+        }
+
+
+        .analysis-header {
+            display: flex;
+            justify-content: space-between;
+            /* Title left, actions right */
+            align-items: center;
+            /* Vertically align items */
+            padding: 20px 30px 15px 30px;
+            /* Padding top/bottom/sides */
+            /* Restore padding */
+            background-color: var(--bg-secondary);
+            /* Background for header area */
+            border-bottom: 1px solid var(--border-color);
+            /* Separator */
+            text-align: center;
+            /* Center align all content within */
+        }
+
+        @media (max-width: 600px) {
+            .analysis-header {
+                padding: 15px 20px;
+                text-align: center;
+                /* Ensure center align */
+            }
+
+            .analysis-section h3 {
+                margin-bottom: 10px;
+            }
+
+            .analysis-actions .print-help-text {
+                max-width: 90%;
+                /* Allow slightly wider on mobile */
+            }
+        }
+
+        /* Style the new actions container */
+        .analysis-actions {
+            text-align: center;
+            /* Center button and text */
+        }
+
+        /* Adjust button margin */
+        .analysis-actions .analysis-print-btn {
+            margin-bottom: 5px;
+            /* Space below button */
+            margin-top: 0;
+            /* Reset top margin if needed */
+            margin-left: auto;
+            /* Helps ensure right alignment if needed */
+            display: inline-block;
+            /* Ensure text-align works */
+        }
+
+        .analysis-actions .print-help-text {
+            display: block;
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin: 0 auto;
+            /* Remove default paragraph margin */
+            text-align: center;
+            max-width: 350px;
+            /* Limit width for better wrapping */
+            margin-left: auto;
+            /* Helps ensure right alignment */
+            line-height: 1.3;
+            /* Adjust line spacing */
+        }
+
+        /* Tabs */
+        .analysis-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--bg-secondary);
+            padding: 0 30px;
+            margin-bottom: 0;
+            /* Removed margin from old duplicate */
+        }
+
+        .tab-button {
+            position: relative;
+            background: none;
+            border: none;
+            padding: 18px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 5px;
+            border-radius: 4px 4px 0 0;
+        }
+
+        /* Combined hover & active states */
+        .tab-button.active {
+            color: var(--primary-color);
+        }
+
+        .tab-button:after {
+            /* Underline effect */
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: var(--primary-color);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .tab-button.active:after {
+            transform: scaleX(1);
+        }
+
+        .tab-button:hover {
+            color: var(--primary-color);
+            background-color: rgba(0, 0, 0, 0.03);
+            transform: translateY(0);
+            /* Keep consistent */
+        }
+
+        [data-theme="dark"] .tab-button:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Tab content */
+        .tab-content {
+            display: none;
+            padding: 30px;
+            /* Padding inside content area */
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+            /* Consistent timing */
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Spending Insights Tab --- */
+        .insights-panel {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            /* Default layout */
+            gap: 24px;
+            align-items: start;
+            /* Align columns to top */
+        }
+
+        /* Card Base Styles (Apply to both list and detail) */
+        .category-list-card,
+        .category-detail-card {
+            background-color: var(--bg-secondary);
+            border-radius: 10px;
+            box-shadow: 0 1px 3px var(--shadow-color);
+            padding: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .category-list-card {
+            height: fit-content;
+            /* Let list card size naturally */
+        }
+
+        .category-list-card h4,
+        .category-detail-card #selected-category-name {
+            /* Card Titles */
+            margin-top: 0;
+            margin-bottom: 16px;
+            font-size: 18px;
+            color: var(--text-primary);
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        #selected-category-name {
+            /* More specific title */
+            font-size: 24px;
+            margin-bottom: 24px;
+        }
+
+        .category-instruction {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        /* Category list */
+        .clickable-categories {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 400px;
+            /* Keep scrollable */
+            overflow-y: auto;
+        }
+
+        .category-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            background-color: var(--bg-primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid var(--border-color);
+            border-left: 3px solid transparent;
+        }
+
+        .category-item:hover {
+            background-color: var(--input-bg);
+            transform: translateX(3px);
+            border-left-color: var(--primary-color);
+        }
+
+        .category-item.selected {
+            background-color: var(--input-bg);
+            border-left: 3px solid var(--primary-color);
+            box-shadow: 0 0 5px rgba(49, 130, 206, 0.3);
+        }
+
+        .category-color {
+            /* Dot */
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .category-name {
+            /* Text within item */
+            font-weight: 500;
+            flex-grow: 1;
+            color: var(--text-primary);
+        }
+
+        .category-amount {
+            /* Amount within item */
+            font-weight: 600;
+            margin-right: 8px;
+            color: var(--text-primary);
+        }
+
+        .category-percent {
+            /* Percentage within item */
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .no-categories {
+            /* Placeholder text */
+            padding: 14px 16px;
+            color: var(--text-secondary);
+            font-style: italic;
+            text-align: center;
+        }
+
+        /* Category Detail Card Specifics */
+        .empty-state {
+            display: none;
+            /* Hidden by default, shown via JS .active class */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--text-secondary);
+            min-height: 300px;
+            /* Ensure size */
+        }
+
+        .empty-state.active {
+            display: flex;
+        }
+
+        /* JS toggles this */
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: var(--primary-color);
+        }
+
+        .empty-state h4 {
+            margin: 0 0 12px 0;
+            color: var(--text-primary);
+            font-size: 20px;
+        }
+
+        .empty-state p {
+            margin: 0;
+            max-width: 400px;
+            color: var(--text-secondary);
+        }
+
+        .category-content {
+            /* Wrapper for details when category is selected */
+            /* display: none; is handled by JS */
+        }
+
+        .category-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-item {
+            padding: 16px;
+            background-color: var(--bg-primary);
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Trend visualization */
+        .category-trend {
+            margin-bottom: 32px;
+        }
+
+        .trend-bar-container {
+            padding: 16px;
+            background-color: var(--bg-primary);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .trend-label {
+            font-weight: 500;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .trend-bar-wrapper {
+            position: relative;
+            height: 24px;
+            background-color: var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .trend-bar-avg {
+            /* Vertical line */
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 2px;
+            height: 100%;
+            background-color: var(--text-secondary);
+            z-index: 2;
+            transform: translateX(-50%);
+        }
+
+        .trend-bar-current {
+            /* Actual bar */
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 50%;
+            /* Default */
+            background-color: #f59e0b;
+            /* Default */
+            border-radius: 12px 0 0 12px;
+            transition: width 0.4s ease, background-color 0.4s ease;
+            z-index: 1;
+        }
+
+        .trend-bar-current.low {
+            background-color: var(--success-color);
+        }
+
+        .trend-bar-current.high {
+            background-color: var(--danger-color);
+        }
+
+        .trend-markers {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-secondary);
+            padding: 0 5px;
+        }
+
+        /* Opportunities section */
+        .category-opportunities {
+            margin-top: 24px;
+        }
+
+        .category-opportunities h5 {
+            font-size: 16px;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        #category-opportunities-list {
+            /* Container for opportunities */
+            max-height: 300px;
+            /* Make scrollable */
+            overflow-y: auto;
+            padding-right: 10px;
+            /* Space for scrollbar */
+            margin-right: -10px;
+            /* Offset padding */
+        }
+
+        #category-opportunities-list .savings-opportunity {
+            /* Individual opportunity item */
+            display: flex;
+            padding: 16px;
+            margin-bottom: 12px;
+            background-color: var(--bg-primary);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            border-left: 3px solid var(--primary-color);
+            align-items: flex-start;
+            /* Removed overflow-y: auto here, it belongs on the container */
+            /* Removed padding/margin right offsets here */
+        }
+
+        /* Optional: Style the scrollbar for better looks (Webkit browsers) */
+        #category-opportunities-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #category-opportunities-list::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+            border-radius: 3px;
+        }
+
+        #category-opportunities-list::-webkit-scrollbar-thumb {
+            background-color: var(--border-color);
+            border-radius: 3px;
+        }
+
+        #category-opportunities-list::-webkit-scrollbar-thumb:hover {
+            background-color: var(--text-secondary);
+        }
+
+        .opportunity-icon {
+            font-size: 24px;
+            margin-right: 16px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .opportunity-details {
+            flex: 1;
+        }
+
+        .opportunity-title {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            /* Adjusted from 6px */
+            color: var(--text-primary);
+        }
+
+        .opportunity-description {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 14px;
+            /* Adjusted from 0.9em */
+            line-height: 1.5;
+            /* Adjusted from 1.4 */
+        }
+
+        /* Dark mode recommendation color */
+        [data-theme="dark"] .recommendation {
+            background-color: rgba(255, 249, 219, 0.1);
+        }
+
+
+        /* --- Budget Allocation Tab (50/30/20) --- */
+        .budget-allocation-panel {
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 1px 4px var(--shadow-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .budget-allocation-panel .allocation-intro {
+            margin-bottom: 25px;
+            text-align: center;
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 20px;
+        }
+
+        .budget-allocation-panel .allocation-intro p {
+            margin-top: 0;
+            margin-bottom: 20px;
+            /* Space before definitions */
+            font-size: 1.1em;
+            color: var(--text-primary);
+            line-height: 1.6;
+            /* Improve readability */
+            text-align: center;
+            /* Keep centered */
+        }
+
+        .budget-allocation-panel .allocation-intro strong {
+            /* For 50/30/20 text */
+            color: var(--primary-color);
+        }
+
+        /* Target the net savings amount specifically */
+        #net-savings-display {
+            font-weight: 700;
+            /* Make it bolder */
+            padding: 2px 6px;
+            /* Optional: subtle background/padding */
+            border-radius: 4px;
+            /* Background/border can be added dynamically with JS too if preferred */
+        }
+
+        /* Color will be set by JS based on value */
+
+        .budget-allocation-panel .allocation-intro ul {
+            list-style: none;
+            padding: 0;
+            margin: 0 auto;
+            max-width: 450px;
+            text-align: left;
+            font-size: 0.9em;
+            color: var(--text-secondary);
+        }
+
+        .budget-allocation-panel .allocation-intro li {
+            margin-bottom: 8px;
+        }
+
+        .budget-allocation-panel .allocation-intro li strong {
+            /* For Needs/Wants/Savings labels */
+            color: var(--text-primary);
+            display: inline-block;
+            width: 180px;
+            /* Align definitions on wider screens */
+        }
+
+        .allocation-breakdown {
+            display: grid;
+            gap: 25px;
+        }
+
+        .allocation-category {
+            background-color: var(--bg-primary);
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .allocation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 15px;
+        }
+
+        .allocation-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            /* Color assigned below based on category class */
+        }
+
+        .allocation-category.needs .allocation-title {
+            color: #3498db;
+        }
+
+        .allocation-category.wants .allocation-title {
+            color: #f39c12;
+        }
+
+        .allocation-category.savings .allocation-title {
+            color: var(--success-color);
+        }
+
+        .allocation-target {
+            font-size: 0.85em;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .allocation-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 10px;
+        }
+
+        .allocation-actual-amount {
+            font-size: 1.6em;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .allocation-actual-percent {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .allocation-bar-container {
+            position: relative;
+            height: 20px;
+            background-color: var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        [data-theme="dark"] .allocation-bar-container {
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .allocation-bar-actual {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            border-radius: 10px;
+            /* Full radius looks better */
+            transition: width 0.5s ease-out, background-color 0.3s ease;
+        }
+
+        .allocation-category.needs .allocation-bar-actual {
+            background-color: #3498db;
+        }
+
+        .allocation-category.wants .allocation-bar-actual {
+            background-color: #f39c12;
+        }
+
+        .allocation-category.savings .allocation-bar-actual {
+            background-color: var(--success-color);
+        }
+
+        .allocation-bar-actual.over-target {
+            background-color: var(--danger-color) !important;
+        }
+
+        /* Red override */
+        .allocation-bar-target {
+            /* Vertical line marker */
+            position: absolute;
+            top: -2px;
+            bottom: -2px;
+            width: 2px;
+            background-color: rgba(0, 0, 0, 0.3);
+            transform: translateX(-50%);
+            z-index: 1;
+        }
+
+        [data-theme="dark"] .allocation-bar-target {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .allocation-note {
+            margin-top: 25px;
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            text-align: center;
+            font-style: italic;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 20px;
+        }
+
+        .allocation-note p {
+            margin: 0;
+        }
+
+        .allocation-note strong {
+            color: var(--text-primary);
+        }
+
+        .allocation-definitions {
+            list-style: none;
+            padding: 0;
+            margin: 0 auto;
+            max-width: 600px;
+            /* Adjust width as needed */
+            text-align: left;
+        }
+
+        .allocation-definitions li {
+            display: flex;
+            /* Use flexbox for alignment */
+            align-items: baseline;
+            /* Align text along the baseline */
+            margin-bottom: 12px;
+            /* Space between items */
+            font-size: 0.95em;
+            /* Slightly larger definition text */
+            color: var(--text-secondary);
+            gap: 8px;
+            /* Space between label and definition */
+        }
+
+        .allocation-definitions li strong {
+            color: var(--text-primary);
+            font-weight: 600;
+            flex-shrink: 0;
+            /* Prevent shrinking */
+            width: 210px;
+            /* << ADJUST THIS WIDTH >> for alignment */
+            text-align: right;
+            /* Right-align the label */
+            padding-right: 8px;
+            /* Space after the colon */
+        }
+
+
+        /* --- Control Buttons --- */
+        .control-buttons {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .allocation-definitions li span {
+            flex-grow: 1;
+            /* Allow definition text to take remaining space */
+            line-height: 1.5;
+            /* Ensure multi-line definitions are readable */
+        }
+
+        /* Responsive adjustment for the definition list labels */
+        @media (max-width: 600px) {
+            .budget-allocation-panel .allocation-intro p {
+                text-align: left;
+                /* Align left on mobile */
+            }
+
+            .allocation-definitions li {
+                flex-direction: column;
+                /* Stack label and definition */
+                align-items: flex-start;
+                /* Align items left */
+                margin-bottom: 15px;
+                gap: 4px;
+            }
+
+            .allocation-definitions li strong {
+                width: auto;
+                /* Remove fixed width */
+                text-align: left;
+                /* Align left */
+                padding-right: 0;
+                margin-bottom: 2px;
+                /* Small space below label */
+            }
+        }
+
+        /* --- Responsive Styles --- */
+        @media (max-width: 900px) {
+
+            /* Tablet and smaller */
+            .insights-panel {
+                grid-template-columns: 1fr;
+                /* Stack insights columns */
+            }
+        }
+
+        @media (max-width: 768px) {
+
+            /* Mobile */
+            body {
+                padding: 0;
+            }
+
+            td input[type="date"],
+            td input[type="text"],
+            td input[type="number"],
+            td select {
+                width: auto;
+                /* Keep auto */
+                flex-grow: 1;
+                /* max-width: 60%; */
+                /* REMOVE or adjust max-width if needed */
+                max-width: calc(100% - 10px);
+                /* Ensure it doesn't overflow flex container */
+                text-align: right;
+                padding: 5px 8px;
+                min-width: 0;
+                /* ADD THIS - Crucial for shrinking */
+                flex-shrink: 1;
+                /* ADD THIS - Explicitly allow shrinking */
+                overflow: hidden;
+                /* Add overflow control */
+                text-overflow: ellipsis;
+                /* Add ellipsis */
+            }
+
+            td[data-label="Category"] select {
+                padding-right: 25px;
+                /* Ensure space for arrow on mobile */
+            }
+
+            td[data-label="Amount"] input[type="number"] {
+                /* Numbers often need less space */
+                max-width: 100px;
+                /* Example fixed max-width */
+                flex-grow: 0;
+                /* Don't let it grow excessively */
+            }
+
+            .container {
+                padding: 15px;
+                margin: 10px auto;
+                border-radius: 0;
+                max-width: 100%;
+                /* Allow full width */
+            }
+
+            /* Mobile banners/headers */
+            .site-banner {
+                padding: 10px 15px;
+                border-radius: 6px;
+            }
+
+            .banner-text {
+                font-size: 1.3em;
+            }
+
+            .banner-logo img {
+                height: 35px;
+            }
+
+            .header {
+                font-size: 1.3em;
+                flex-direction: column;
+                gap: 10px;
+                margin-bottom: 25px;
+            }
+
+            .toggle-theme {
+                margin-left: 0;
+            }
+
+            /* Mobile inputs */
+            .input-group {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 5px;
+            }
+
+            .input-group label {
+                margin-bottom: 3px;
+                font-size: 0.95em;
+            }
+
+            input[type="text"],
+            input[type="month"],
+            input[type="number"],
+            input[type="date"],
+            select {
+                padding: 8px 10px;
+                font-size: 1em;
+                width: 100%;
+                min-width: unset;
+            }
+
+            /* Mobile table styling */
+            table {
+                border: none;
+                box-shadow: none;
+                border-radius: 0;
+            }
+
+            thead {
+                display: none;
+            }
+
+            tbody,
+            tr,
+            td {
+                display: block;
+            }
+
+            tr {
+                border: 1px solid var(--border-color);
+                border-radius: 6px;
+                margin-bottom: 15px;
+                padding: 15px;
+                background-color: var(--bg-primary);
+                box-shadow: 0 1px 3px var(--shadow-color);
+            }
+
+            td {
+                border: none;
+                padding: 8px 0;
+                text-align: right;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px dashed var(--border-color);
+            }
+
+            td:last-child {
+                border-bottom: none;
+            }
+
+            td:before {
+                position: static;
+                content: attr(data-label);
+                font-weight: 600;
+                text-align: left;
+                padding-right: 10px;
+                white-space: normal;
+                width: auto;
+                color: var(--text-primary);
+                font-size: 0.9em;
+            }
+
+            td input[type="date"],
+            td input[type="text"],
+            td input[type="number"],
+            td select {
+                width: auto;
+                flex-grow: 1;
+                max-width: 60%;
+                text-align: right;
+                padding: 5px 8px;
+            }
+
+            /* Ensure select is included */
+            td[data-label="Actions"] {
+                justify-content: center;
+                padding-top: 15px;
+            }
+
+            td[data-label="Actions"]:before {
+                display: none;
+            }
+
+            .delete-btn {
+                font-size: 1.2em;
+                width: 35px;
+                height: 35px;
+                /* Adjust size if needed */
+            }
+
+            /* Mobile recap/progress */
+            .recap-progress-group {
+                padding: 20px 15px;
+                margin-top: 25px;
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+            }
+
+            /* Remove border/radius */
+            .recap-progress-group h3 {
+                text-align: center;
+                font-size: 1.3em;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                margin-bottom: 25px;
+            }
+
+            .summary-value {
+                font-size: 1.4em;
+                /* Increase slightly */
+            }
+
+            .summary-net {
+                padding: 15px;
+            }
+
+            .summary-label-main {
+                font-size: 1.1em;
+                /* Increase slightly */
+            }
+
+            .summary-value-main {
+                font-size: 1.9em;
+                /* Increase slightly */
+            }
+
+            .progress-container h3 {
+                text-align: center;
+                font-size: 1.1em;
+            }
+
+            .progress-goal-display {
+                text-align: center;
+                margin-bottom: 10px;
+            }
+
+            .progress-labels {
+                justify-content: center;
+            }
+
+            .progress-percentage {
+                font-size: 0.75em;
+                padding: 0 8px;
+            }
+
+            /* Mobile Analysis */
+            .analysis-tabs {
+                padding: 0 16px;
+            }
+
+            .tab-button {
+                padding: 12px 16px;
+                font-size: 14px;
+            }
+
+            .tab-content {
+                padding: 20px 16px;
+            }
+
+            .category-list-card,
+            .category-detail-card {
+                padding: 16px;
+            }
+
+            .category-stats {
+                grid-template-columns: 1fr;
+            }
+
+            /* Stack stats items */
+            .budget-allocation-panel .allocation-intro li strong {
+                width: auto;
+                display: block;
+                margin-bottom: 3px;
+            }
+
+            /* Adjust allocation label */
+            .allocation-header {
+                flex-direction: column;
+                align-items: flex-start;
+                margin-bottom: 10px;
+            }
+
+            .allocation-title {
+                font-size: 1.1em;
+            }
+
+            .allocation-target {
+                font-size: 0.8em;
+            }
+
+            .allocation-actual-amount {
+                font-size: 1.4em;
+            }
+
+            .allocation-actual-percent {
+                font-size: 1em;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            @page {
+                size: letter portrait;
+                margin: 0.5in;
+                /* Reduced margins */
+            }
+
+            body {
+                background: white !important;
+                color: #000000 !important;
+                font-family: Arial, Helvetica, sans-serif;
+                font-size: 10pt;
+                line-height: 1.3;
+                /* Tighter line height */
+                margin: 0;
+                padding: 0;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            /* General Hidden Elements */
+            .site-banner,
+            .toggle-theme,
+            button,
+            .delete-btn,
+            .header,
+            .footer,
+            .input-group input,
+            table input,
+            .progress-percentage,
+            .recap-progress-group,
+            .analysis-tabs,
+            .category-detail-card .empty-state,
+            .category-item .category-color,
+            .category-trend,
+            .savings-opportunity .opportunity-icon,
+            .budget-allocation-panel .allocation-sliders,
+            /* Hide old sliders if any */
+            .budget-allocation-panel .allocation-chart,
+            /* Hide old chart if any */
+            .budget-allocation-panel .potential-growth,
+            /* Hide old growth if any */
+            td[data-label="Recurring"] .recurring-checkbox-label
+
+            /* Hide recurring label/box */
+                {
+                display: none !important;
+            }
+
+            /* Layout & User Info */
+            .container {
+                max-width: none !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                border: none !important;
+                background: none !important;
+            }
+
+            .print-user-info {
+                margin-bottom: 15px;
+                border-bottom: 1px solid #ccc;
+                padding-bottom: 10px;
+                font-size: 10pt;
+            }
+
+            .print-user-info .input-group {
+                display: grid !important;
+                grid-template-columns: 110px 1fr;
+                gap: 5px;
+                margin-bottom: 5px;
+                align-items: center;
+            }
+
+            .print-user-info .input-group label {
+                display: inline-block !important;
+                font-weight: bold;
+                padding-right: 5px;
+                margin: 0;
+                text-align: left;
+            }
+
+            .print-user-info .print-top-value {
+                font-weight: normal;
+                display: inline !important;
+                text-align: left;
+                padding: 0;
+                min-height: unset;
+            }
+
+            /* Table Print Styles */
+            .table-container {
+                margin-top: 10px !important;
+                margin-bottom: 5px !important;
+                page-break-inside: avoid;
+            }
+
+            .table-container h3 {
+                font-size: 11pt !important;
+                font-weight: bold;
+                color: #1e3a5f;
+                border-bottom: 1px solid #666;
+                padding-bottom: 2px !important;
+                margin-bottom: 5px !important;
+                page-break-after: avoid;
+            }
+
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+                margin-bottom: 5px !important;
+                border: 1px solid #aaa;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                overflow: visible !important;
+                page-break-inside: auto;
+            }
+
+            thead,
+            tbody,
+            tr,
+            th,
+            td {
+                display: revert !important;
+                position: static !important;
+                padding-left: 0 !important;
+            }
+
+            tr {
+                page-break-inside: avoid;
+            }
+
+            td:before {
+                display: none !important;
+            }
+
+            th {
+                background-color: #eee !important;
+                color: #000 !important;
+                font-weight: bold;
+                font-size: 8.5pt !important;
+                padding: 3px 5px !important;
+                border: 1px solid #aaa;
+                border-bottom-width: 2px;
+                text-align: center !important;
+                vertical-align: middle !important;
+            }
+
+            td {
+                padding: 2px 5px !important;
+                border: 1px solid #ccc;
+                color: #000 !important;
+                font-size: 9pt !important;
+                text-align: center !important;
+                vertical-align: middle !important;
+            }
+
+            td .print-value {
+                display: inline-block !important;
+                width: 100%;
+                padding: 0 !important;
+                /* Remove padding from inner span */
+                min-height: unset;
+                color: #000 !important;
+                white-space: pre-wrap;
+                word-break: break-word;
+                text-align: center !important;
+                font-size: 9pt !important;
+            }
+
+            th:nth-child(6),
+            td[data-label="Actions"] {
+                display: none !important;
+            }
+
+            /* Hide Actions column */
+            th:nth-child(5) {
+                display: table-cell !important;
+            }
+
+            /* Show Recurring header */
+            td[data-label="Recurring"] {
+                display: table-cell !important;
+                padding: 2px 5px !important;
+                border: 1px solid #ccc !important;
+                visibility: visible !important;
+                text-align: center !important;
+                vertical-align: middle !important;
+            }
+
+            td[data-label="Recurring"] .print-value {
+                font-weight: bold;
+                color: #000 !important;
+                font-size: 10pt !important;
+                display: inline-block !important;
+                width: auto !important;
+                text-align: center !important;
+            }
+
+            td[data-label="Recurring"] .print-value.recurring-no {
+                font-weight: normal;
+                color: #555 !important;
+            }
+
+
+
+
+            /* Analysis Section Print Styles */
+            .analysis-section {
+                display: block !important;
+                background: #ffffff !important;
+                border: 1px solid #aaa !important;
+                box-shadow: none !important;
+                margin-top: 15px !important;
+                padding: 10px !important;
+                page-break-inside: avoid !important;
+                border-radius: 0 !important;
+            }
+
+            .analysis-section>h3 {
+                display: block !important;
+                font-size: 12pt !important;
+                font-weight: bold !important;
+                color: #1e3a5f !important;
+                border-bottom: 1px solid #666 !important;
+                padding: 5px 0 !important;
+                margin-bottom: 10px !important;
+                page-break-after: avoid !important;
+                background: none !important;
+                text-align: left !important;
+            }
+
+            .analysis-section .tab-content {
+                display: none !important;
+                padding: 0 !important;
+            }
+
+            .analysis-section .tab-content.active {
+                display: block !important;
+            }
+
+            /* Show active tab content */
+            /* Insights Tab Print */
+            .insights-panel {
+                display: grid !important;
+                grid-template-columns: 1fr 1.5fr !important;
+                gap: 10px !important;
+                page-break-inside: avoid !important;
+                background: none !important;
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                align-items: start;
+            }
+
+            .category-list-card,
+            .category-detail-card {
+                display: block !important;
+                background: none !important;
+                border: 1px solid #ccc !important;
+                box-shadow: none !important;
+                padding: 8px !important;
+                page-break-inside: avoid !important;
+                border-radius: 0 !important;
+            }
+
+            .category-list-card h4,
+            .category-detail-card #selected-category-name,
+            .category-detail-card .category-opportunities h5 {
+                display: block !important;
+                font-size: 10pt !important;
+                font-weight: bold !important;
+                color: #333 !important;
+                border-bottom: 1px solid #eee !important;
+                padding-bottom: 2px !important;
+                margin-top: 0 !important;
+                margin-bottom: 8px !important;
+                background: none !important;
+                text-align: left !important;
+            }
+
+            .category-list-card .category-instruction {
+                display: block !important;
+                font-size: 8pt !important;
+                color: #555 !important;
+                margin-bottom: 8px !important;
+                font-weight: normal !important;
+                border-bottom: none !important;
+                padding-bottom: 0 !important;
+            }
+
+            .clickable-categories {
+                max-height: none !important;
+                overflow: visible !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                list-style: none !important;
+            }
+
+            .category-item {
+                display: flex !important;
+                justify-content: space-between !important;
+                border: none !important;
+                border-bottom: 1px dotted #ddd !important;
+                padding: 2px 0 !important;
+                margin-bottom: 0 !important;
+                background: none !important;
+                border-left: none !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                color: #000 !important;
+            }
+
+            .category-item:last-child {
+                border-bottom: none !important;
+            }
+
+            .category-item:hover,
+            .category-item.selected {
+                background: none !important;
+                transform: none !important;
+                border-left: none !important;
+                box-shadow: none !important;
+            }
+
+            .category-name,
+            .category-amount,
+            .category-percent {
+                color: #000 !important;
+                font-size: 9pt !important;
+                font-weight: normal !important;
+                margin: 0 2px !important;
+                padding: 0 !important;
+            }
+
+            .category-amount {
+                font-weight: bold !important;
+                text-align: right;
+            }
+
+            .category-percent {
+                font-size: 8pt !important;
+                color: #444 !important;
+                text-align: right;
+                min-width: 40px;
+                display: inline-block;
+            }
+
+            .category-name {
+                flex-grow: 1;
+                text-align: left;
+            }
+
+            .category-detail-card .category-content {
+                display: block !important;
+            }
+
+            .category-stats {
+                display: grid !important;
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 10px !important;
+                margin-bottom: 15px !important;
+            }
+
+            .stat-item {
+                background: none !important;
+                border: 1px solid #eee !important;
+                padding: 3px !important;
+                text-align: center !important;
+                border-radius: 0 !important;
+            }
+
+            .stat-label,
+            .stat-value {
+                font-size: 8.5pt !important;
+                color: #000 !important;
+                margin-bottom: 2px !important;
+            }
+
+            .stat-value {
+                font-weight: bold !important;
+                display: block;
+            }
+
+            #category-opportunities-list {
+                max-height: none !important;
+                overflow: visible !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            #category-opportunities-list .savings-opportunity {
+                background: none !important;
+                border: none !important;
+                border-bottom: 1px dotted #ddd !important;
+                padding: 3px 0 !important;
+                margin-bottom: 2px !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                color: #000 !important;
+                align-items: flex-start !important;
+                page-break-inside: avoid !important;
+            }
+
+            #category-opportunities-list .savings-opportunity:last-child {
+                border-bottom: none !important;
+            }
+
+            .opportunity-details {
+                flex-grow: 1;
+            }
+
+            .opportunity-title {
+                font-weight: bold !important;
+                font-size: 9.5pt !important;
+                color: #000 !important;
+                margin-bottom: 3px !important;
+            }
+
+            .opportunity-description {
+                font-size: 8.5pt !important;
+                color: #333 !important;
+                line-height: 1.2 !important;
+                margin: 0 !important;
+            }
+
+            /* Allocation Tab Print */
+            .budget-allocation-panel {
+                background: none !important;
+                border: 1px solid #ccc !important;
+                padding: 10px !important;
+                box-shadow: none !important;
+                page-break-inside: avoid !important;
+                border-radius: 0 !important;
+                margin-top: 15px;
+            }
+
+            /* Hide elements not suitable for print within allocation */
+            .budget-allocation-panel .allocation-intro ul,
+            /* Hide definitions list */
+            .budget-allocation-panel .allocation-bar-container,
+            /* Hide visual bars */
+            .budget-allocation-panel .allocation-note
+
+            /* Hide the note */
+                {
+                display: none !important;
+            }
+
+            .budget-allocation-panel .allocation-intro p {
+                display: block !important;
+                text-align: left !important;
+                font-size: 10pt !important;
+                color: #000 !important;
+                margin-bottom: 10px !important;
+                border-bottom: 1px dashed #ccc !important;
+                /* Add separator */
+            }
+
+            .budget-allocation-panel .allocation-intro strong {
+                font-weight: bold !important;
+                color: #000 !important;
+            }
+
+            /* Black for print */
+            #net-savings-display {
+                color: #000 !important;
+            }
+
+            /* Net savings black for print */
+            .budget-allocation-panel .allocation-intro ul {
+                display: none !important;
+            }
+
+            /* Hide detailed definitions */
+            .allocation-breakdown {
+                display: grid !important;
+                gap: 8px !important;
+                margin-top: 10px !important;
+            }
+
+            .allocation-category {
+                background: none !important;
+                border: 1px solid #eee !important;
+                border-bottom: 1px solid #eee !important;
+                /* Separator line */
+                padding: 5px !important;
+                border-radius: 0 !important;
+            }
+
+            .allocation-header {
+                margin-bottom: 5px !important;
+            }
+
+            .allocation-title {
+                font-size: 10pt !important;
+                color: #000 !important;
+                font-weight: bold !important;
+            }
+
+            /* Black title */
+            .allocation-target {
+                font-size: 8pt !important;
+                color: #555 !important;
+            }
+
+            .allocation-details {
+                margin-bottom: 5px !important;
+                display: flex !important;
+                justify-content: space-between !important;
+                margin-bottom: 3px !important;
+                /* Reduced space */
+                padding: 0 !important;
+                align-items: baseline;
+            }
+
+            .allocation-actual-amount {
+                font-size: 9.5pt !important;
+                font-weight: bold !important;
+                color: #000 !important;
+            }
+
+            .allocation-actual-percent {
+                font-size: 9pt !important;
+                color: #333 !important;
+                font-weight: normal !important;
+            }
+
+            .allocation-bar-container {
+                height: 10px !important;
+                border-radius: 5px !important;
+                background-color: #eee !important;
+                border: 1px solid #ccc !important;
+            }
+
+            .allocation-bar-actual {
+                border-radius: 5px !important;
+            }
+
+            .allocation-category.needs .allocation-bar-actual {
+                background-color: #bbb !important;
+            }
+
+            /* Greyscale bars */
+            .allocation-category.wants .allocation-bar-actual {
+                background-color: #ccc !important;
+            }
+
+            .allocation-category.savings .allocation-bar-actual {
+                background-color: #ddd !important;
+            }
+
+            .allocation-bar-target {
+                background-color: #777 !important;
+                width: 1px !important;
+                top: 0 !important;
+                bottom: 0 !important;
+            }
+
+            .allocation-note {
+                display: none !important;
+            }
+
+            /* Hide the note */
+
+            /* General Print Helpers */
+            h3 {
+                page-break-after: avoid;
+            }
+
+            /* Already exists, confirm placement */
+        }
+
+        /* === START: New Styles for Analysis Controls & Help Text === */
+
+
+
+        .print-help-text {
+            display: block;
+            /* Make span take its own line */
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin-top: 5px;
+            text-align: right;
+            /* Align with button */
+        }
+
+        /* Specific alignment for help text in main control buttons area */
+        .control-buttons .print-help-text {
+            width: 100%;
+            /* Make it take full width in flex container */
+            text-align: center;
+            /* Center it below the main button */
+            margin-top: -5px;
+            /* Adjust spacing if needed */
+            margin-bottom: 10px;
+            /* Add space below */
+            order: 1;
+            /* Ensure it appears after the first button */
+        }
+
+        .control-buttons .print-btn {
+            order: 0;
+        }
+
+        /* Ensure PDF button is first */
+        .control-buttons #category-analysis-btn {
+            order: 2;
+        }
+
+        .control-buttons #reset-data-btn {
+            order: 3;
+        }
+
+
+        /* --- Add to @media print --- */
+        @media print {
+
+            /* Hide the new analysis button and help text during print */
+            .analysis-controls,
+            .print-help-text {
+                display: none !important;
+            }
+
+            /* Make sure the original button is also hidden (should already be covered by 'button' rule) */
+            .control-buttons .print-btn {
+                display: none !important;
+            }
+        }
+    </style>
+
+    <div class="container">
+        <!-- Site Banner (Visible on screen) -->
+        <div class="site-banner">
+            <div class="banner-logo">
+                <img src="https://static.wixstatic.com/media/c24a60_577eb503a3c1402b846b9ec4a2afd46e~mv2.png" alt="My College Finance Logo">
+            </div>
+            <div class="banner-text">MY COLLEGE FINANCE</div>
+        </div>
+
+        <!-- Header (Visible on screen) -->
+        <div class="header">
+            <span>Monthly Budget Planner</span>
+            <span class="toggle-theme" onclick="toggleTheme()" role="button" aria-label="Toggle theme">🌞</span>
+        </div>
+
+        <!-- User Info (Inputs visible on screen, values shown on print) -->
+        <div class="print-user-info">
+            <div class="input-group">
+                <label for="name">Your Name:</label>
+                <input type="text" id="name" placeholder="Enter your name" onchange="updateRecapAndSave()">
+            </div>
+            <div class="input-group">
+                <label for="month">Month:</label>
+                <input type="month" id="month" onchange="updateRecapAndSave()">
+            </div>
+            <div class="input-group">
+                <label for="budget-goal">Budget Goal:</label>
+                <input type="number" id="budget-goal" placeholder="Enter your budget goal" step="0.01" onchange="updateRecapAndSave()">
+            </div>
+        </div>
+
+        <!-- === TABLES === -->
+        <div class="table-container" id="sections">
+            <h3>Income</h3>
+            <datalist id="description-list-income-table"></datalist>
+            <table id="income-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Recurring</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody><!-- Rows added by JS --></tbody>
+            </table>
+            <button onclick="addRow('income-table')">Add Income</button>
+        </div>
+
+        <div class="table-container">
+            <h3>Fixed Expenses</h3>
+            <datalist id="description-list-fixed-expenses-table"></datalist>
+            <table id="fixed-expenses-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Recurring</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody><!-- Rows added by JS --></tbody>
+            </table>
+            <button onclick="addRow('fixed-expenses-table')">Add Fixed Expense</button>
+        </div>
+
+        <div class="table-container">
+            <h3>Other Expenses</h3>
+            <datalist id="description-list-other-expenses-table"></datalist>
+            <table id="other-expenses-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Recurring</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody><!-- Rows added by JS --></tbody>
+            </table>
+            <button onclick="addRow('other-expenses-table')">Add Other Expense</button>
+        </div>
+
+        <div class="table-container">
+            <h3>Bills</h3>
+            <datalist id="description-list-bills-table"></datalist>
+            <table id="bills-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Recurring</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody><!-- Rows added by JS --></tbody>
+            </table>
+            <button onclick="addRow('bills-table')">Add Bill</button>
+        </div>
+
+        <div class="table-container">
+            <h3>Savings Contributions</h3>
+            <datalist id="description-list-savings-table"></datalist>
+            <table id="savings-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Category</th> <!-- Header updated for clarity -->
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Recurring</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody><!-- Rows added by JS --></tbody>
+            </table>
+            <button onclick="addRow('savings-table')">Add Savings</button>
+        </div>
+
+        <!-- ===== Analysis Section ===== -->
+        <div class="analysis-section">
+            <!-- START: New Analysis Header Wrapper -->
+            <div class="analysis-header">
+                <h3>Budget Analysis</h3>
+                <!-- START: New Actions Wrapper -->
+                <div class="analysis-actions">
+                    <button onclick="generatePDF()" class="print-btn analysis-print-btn">
+                        <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+                            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z" />
+                            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z" />
+                        </svg>
+                        Download Current View
+                    </button>
+                    <p class="print-help-text">Downloads worksheet data and the currently selected analysis tab (Insights or Allocation).</p> <!-- Changed to <p> -->
+                </div>
+                <!-- END: New Actions Wrapper -->
+            </div>
+            <!-- END: New Analysis Header Wrapper -->
+
+            <div class="analysis-tabs">
+                <button class="tab-button active" onclick="showTab('insights')">Spending Insights</button>
+                <button class="tab-button" onclick="showTab('allocation')">Budget Allocation</button> <!-- Changed Tab Name -->
+            </div>
+
+            <div id="insights-tab" class="tab-content active">
+                <div class="insights-panel">
+                    <!-- Category List Card -->
+                    <div class="category-list-card">
+                        <h4>Spending Categories</h4>
+                        <p class="category-instruction">Click on a category to see detailed insights and savings opportunities</p>
+                        <ul id="clickable-category-list" class="clickable-categories">
+                            <!-- Your V2.3 populateCategoryList function will add items here -->
+                            <li class="no-categories">No spending data available</li>
+                        </ul>
+                    </div>
+
+                    <!-- Category Detail Card -->
+                    <div class="category-detail-card" id="category-detail">
+                        <!-- Empty State (shown initially) -->
+                        <div class="empty-state active">
+                            <div class="empty-icon">📊</div>
+                            <h4>Select a Category</h4>
+                            <p>Click on any spending category from the list to see detailed insights and savings opportunities.</p>
+                        </div>
+
+                        <!-- Category Content (shown after clicking a category) -->
+                        <!-- Your V2.3 showCategoryDetails function will populate this -->
+                        <div class="category-content" style="display: none;">
+                            <h4 id="selected-category-name">Category Name</h4>
+
+                            <div class="category-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Amount Spent</span>
+                                    <span class="stat-value" id="category-amount-spent">$0.00</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Percentage of Total</span>
+                                    <span class="stat-value" id="category-percentage">0%</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Monthly Average</span>
+                                    <span class="stat-value" id="category-average">$0.00</span>
+                                </div>
+                            </div>
+
+                            <div class="category-trend">
+                                <div class="trend-bar-container">
+                                    <div class="trend-label">Current vs Average</div>
+                                    <div class="trend-bar-wrapper">
+                                        <div class="trend-bar-avg"></div>
+                                        <div class="trend-bar-current" id="trend-bar-current"></div>
+                                    </div>
+                                    <div class="trend-markers">
+                                        <span class="trend-marker-min">-20%</span>
+                                        <span class="trend-marker-avg">Average</span>
+                                        <span class="trend-marker-max">+20%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="category-opportunities">
+                                <h5>Savings Opportunities</h5>
+                                <div id="category-opportunities-list">
+                                    <!-- Your V2.3 getCategoryOpportunities function will generate items here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== START: Updated Allocation Tab ===== -->
+            <div id="allocation-tab" class="tab-content">
+                <div class="budget-allocation-panel">
+                    <!-- START: Updated Allocation Intro -->
+                    <div class="allocation-intro">
+                        <p>
+                            This section analyzes your budget based on the <strong>50/30/20 guideline</strong>.
+                            Your current net savings are <strong id="net-savings-display" style="color: var(--success-color);">$0.00</strong>.
+                            <!-- JS will update the amount and color -->
+                        </p>
+                        <ul class="allocation-definitions">
+                            <li>
+                                <strong>Needs (Target: ~50%):</strong>
+                                <span>Essential expenses (housing, utilities, groceries, transport, basic bills).</span>
+                            </li>
+                            <li>
+                                <strong>Wants (Target: ~30%):</strong>
+                                <span>Non-essential spending (dining out, entertainment, shopping).</span>
+                            </li>
+                            <li>
+                                <strong>Savings/Debt (Target: ~20%):</strong>
+                                <span>Savings goals, investments, extra debt payments towards principal.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- END: Updated Allocation Intro -->
+
+                    <!-- START: Allocation Breakdown -->
+                    <div class="allocation-breakdown">
+                        <!-- Needs Section -->
+                        <div class="allocation-category needs">
+                            <div class="allocation-header">
+                                <span class="allocation-title">Needs</span>
+                                <span class="allocation-target">(Target: 50%)</span>
+                            </div>
+                            <div class="allocation-details">
+                                <span class="allocation-actual-amount" id="needs-amount">$0.00</span>
+                                <span class="allocation-actual-percent" id="needs-percent">0%</span>
+                            </div>
+                            <div class="allocation-bar-container">
+                                <div class="allocation-bar-actual" id="needs-bar" style="width: 0%;"></div>
+                                <div class="allocation-bar-target" style="left: 50%;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Wants Section -->
+                        <div class="allocation-category wants">
+                            <div class="allocation-header">
+                                <span class="allocation-title">Wants</span>
+                                <span class="allocation-target">(Target: 30%)</span>
+                            </div>
+                            <div class="allocation-details">
+                                <span class="allocation-actual-amount" id="wants-amount">$0.00</span>
+                                <span class="allocation-actual-percent" id="wants-percent">0%</span>
+                            </div>
+                            <div class="allocation-bar-container">
+                                <div class="allocation-bar-actual" id="wants-bar" style="width: 0%;"></div>
+                                <div class="allocation-bar-target" style="left: 30%;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Savings/Debt Section -->
+                        <div class="allocation-category savings">
+                            <div class="allocation-header">
+                                <span class="allocation-title">Savings & Extra Debt</span>
+                                <span class="allocation-target">(Target: 20%)</span>
+                            </div>
+                            <div class="allocation-details">
+                                <span class="allocation-actual-amount" id="savings-debt-amount">$0.00</span>
+                                <span class="allocation-actual-percent" id="savings-debt-percent">0%</span>
+                            </div>
+                            <div class="allocation-bar-container">
+                                <div class="allocation-bar-actual" id="savings-debt-bar" style="width: 0%;"></div>
+                                <div class="allocation-bar-target" style="left: 20%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- END: Allocation Breakdown -->
+
+                    <!-- START: Allocation Note -->
+                    <div class="allocation-note">
+                        <p><strong>Note:</strong> Expense categorization (Needs/Wants) is estimated based on standard definitions. Your personal definitions may vary. This is a guideline, not a strict rule.</p>
+                    </div>
+                    <!-- END: Allocation Note -->
+                </div>
+            </div>
+            <!-- ===== END: Updated Allocation Tab ===== -->
+
+        </div>
+        <!-- ===== END Analysis Section ===== -->
+
+        <!-- ===== Recap & Progress Group ===== -->
+        <div class="recap-progress-group">
+            <h3>Summary</h3>
+            <!-- Summary Layout -->
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <span class="summary-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-up-circle-fill" viewBox="0 0 16 16">
+                            <path d="M16 8A8 8 0 1 0 0 8a8 8 0 0 0 16 0zm-7.5 3.5a.5.5 0 0 1-1 0V5.707L5.354 7.854a.5.5 0 1 1-.708-.708l3-3a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 5.707V11.5z" />
+                        </svg>
+                        Earned this Period:
+                    </span>
+                    <span class="summary-value positive-amount" id="earnt">$0.00</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-down-circle-fill" viewBox="0 0 16 16">
+                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8.5 4.5a.5.5 0 0 0-1 0v5.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V4.5z" />
+                        </svg>
+                        Total Spent:
+                    </span>
+                    <span class="summary-value negative-amount" id="spent">$0.00</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-piggy-bank-fill" viewBox="0 0 16 16">
+                            <path d="M7.964 1.527c-2.977 0-5.571 1.704-6.32 4.125h-.55A1 1 0 0 0 .11 6.824l.254 1.46a1.5 1.5 0 0 0 1.478 1.243h.263c.3.513.688.978 1.145 1.382l-.729 2.477a.5.5 0 0 0 .48.641h2a.5.5 0 0 0 .471-.332l.482-1.351c.635.173 1.31.267 2.011.267.707 0 1.388-.095 2.028-.272l.543 1.372a.5.5 0 0 0 .465.316h2a.5.5 0 0 0 .478-.645l-.761-2.506C13.81 9.895 14.5 8.559 14.5 7.069c0-.145-.007-.29-.02-.431.261-.11.508-.266.705-.444.315.306.815.306.815-.417 0 .223-.5.223-.461-.026a.95.95 0 0 0 .09-.255.7.7 0 0 0-.202-.645.58.58 0 0 0-.707-.098.73.73 0 0 0-.375.562c-.024.243.082.48.32.654a2.1 2.1 0 0 1-.259.153c-.534-2.664-3.284-4.595-6.442-4.595zm7.173 3.876a.6.6 0 0 1 .098-.21.7.7 0 1 1 1.257.823c-.096.065-.18.14-.254.214a.18.18 0 0 1-.27-.153.5.5 0 0 1 .4-.482.3.3 0 0 0 .25-.315.3.3 0 0 0-.3-.288c-.01-.004-.02-.007-.03-.009zm-.576 2.177a1.5 1.5 0 0 0-1.423-1.45l.003-.003c.013-.21.022-.425.022-.648 0-.58-.108-1.13-.3-1.625l-.018-.05c-.7.35-1.45.599-2.258.74l-.004.01c-.83.16-1.7.25-2.6.25-.88 0-1.73-.08-2.56-.23l-.007-.014c-.84-.16-1.63-.41-2.35-.73l-.02-.053c-.2.5-.31 1.05-.31 1.64l.004.01c.01.22.018.44.026.67h.213c.9.0 1.75-.204 2.5-.546l.003-.002a4.5 4.5 0 0 1 1.088-2.012c.25-.168.533-.285.83-.351l.003-.001c.33-.076.67-.114 1.02-.114.36 0 .71.04 1.05.118l.004.001c.3.067.59.186.84.355l.004.002c.42.288.79.635 1.1 1.03l.003.003c.78 1.086 1.86 1.69 3.1 1.69h.003c.15 0 .29-.006.43-.02a1.5 1.5 0 0 0 1.423-1.45z" />
+                        </svg>
+                        Contributions Saved:
+                    </span>
+                    <span class="summary-value positive-amount" id="saved-contributions">$0.00</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-receipt" viewBox="0 0 16 16">
+                            <path d="M1.92.506a.5.5 0 0 1 .434.14L3 1.293l.646-.647a.5.5 0 0 1 .708 0L5 1.293l.646-.647a.5.5 0 0 1 .708 0L7 1.293l.646-.647a.5.5 0 0 1 .708 0L9 1.293l.646-.647a.5.5 0 0 1 .708 0L11 1.293l.646-.647a.5.5 0 0 1 .708 0L13 1.293l.646-.647a.5.5 0 0 1 .434-.14L15 1.5v13a.5.5 0 0 1-.053.224l-.5 1a.5.5 0 0 1-.894-.048L13 14.803l-.5.5a.5.5 0 0 1-.708 0L11 14.803l-.5.5a.5.5 0 0 1-.708 0L9 14.803l-.5.5a.5.5 0 0 1-.708 0L7 14.803l-.5.5a.5.5 0 0 1-.708 0L5 14.803l-.5.5a.5.5 0 0 1-.708 0L3 14.803l-.5.5a.5.5 0 0 1-.894.048l-.5-1A.5.5 0 0 1 1 14.5v-13l.92.006zM2 1.803L2.5 2.303l.5-.5a.5.5 0 0 1 .708 0L4.5 2.303l.5-.5a.5.5 0 0 1 .708 0L6.5 2.303l.5-.5a.5.5 0 0 1 .708 0L8.5 2.303l.5-.5a.5.5 0 0 1 .708 0L10.5 2.303l.5-.5a.5.5 0 0 1 .708 0L12.5 2.303l.5-.5a.5.5 0 0 1 .708 0l.5.5.5-.5v10.894l.547.547a.5.5 0 0 1 0 .708L12.707 15l-.547-.547a.5.5 0 0 1 0-.708l.547-.547a.5.5 0 0 1 0-.708l-.547-.547a.5.5 0 0 1 0-.708l.547-.547a.5.5 0 0 1 0-.708l-.547-.547a.5.5 0 0 1 0-.708L12.707 9l-.547-.547a.5.5 0 0 1 0-.708l.547-.547a.5.5 0 0 1 0-.708L12.707 6l-.547-.547a.5.5 0 0 1 0-.708l.547-.547a.5.5 0 0 1 0-.708L12.707 3 12.5 3.303l-.5.5a.5.5 0 0 1-.708 0L10.5 3.303l-.5.5a.5.5 0 0 1-.708 0L8.5 3.303l-.5.5a.5.5 0 0 1-.708 0L6.5 3.303l-.5.5a.5.5 0 0 1-.708 0L4.5 3.303l-.5.5a.5.5 0 0 1-.708 0L2.5 3.303 2 2.803v-1z" />
+                        </svg>
+                        Bills Paid: <!-- Changed Label -->
+                    </span>
+                    <span class="summary-value" id="debt">$0.00</span>
+                </div>
+            </div>
+
+            <!-- Summary Net -->
+            <div class="summary-net">
+                <span class="summary-label-main">Net Savings:</span>
+                <span class="summary-value-main" id="saved">$0.00</span>
+            </div>
+
+            <!-- Progress Container -->
+            <div class="progress-container">
+                <h3>Budget Goal Progress</h3>
+                <div class="progress-goal-display">
+                    <span>Goal:</span>
+                    <span id="progress-goal-amount">$0.00</span>
+                </div>
+                <div class="progress-bar-wrapper">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill" style="width: 0%;">
+                            <span class="progress-percentage" id="progress-percentage">0%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="progress-labels">
+                    <span id="progress-amount-text">$0 Saved</span>
+                </div>
+            </div>
+        </div> <!-- ===== END recap-progress-group ===== -->
+
+        <!-- Control Buttons -->
+        <div class="control-buttons">
+            <button onclick="generatePDF()" class="print-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z" />
+                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z" />
+                </svg>
+                Download Current View
+            </button>
+            <button onclick="showCategoryAnalysis()" id="category-analysis-btn" class="budget-insights-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z" />
+                    <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z" />
+                </svg>
+                Category Analysis
+            </button>
+            <button onclick="resetAllData()" id="reset-data-btn" class="danger-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3-fill" viewBox="0 0 16 16">
+                    <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5zm-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5zM4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06zm6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528zM8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5z" />
+                </svg>
+                Reset All Data
+            </button>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            Brought to you by My College Finance
+        </div>
+    </div>
+    <!-- ========= END MAIN CONTAINER ========= -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script>
+        // --- Global Variables ---
+        let categoryChartInstance = null;
+        let incomeExpenseChartInstance = null;
+
+        // Use Sets for efficient unique value storage (in-memory for session)
+        const uniqueDescriptions = new Set();
+        // --- Define Category Lists for Each Section ---
+        const incomeCategories = [
+            'Paycheck/Salary',
+            'Freelance/Side Hustle',
+            'Investment Income',
+            'Gifts Received',
+            'Reimbursement',
+            'Other Income'
+        ];
+        const fixedExpenseCategories = [
+            'Rent/Mortgage',
+            'Car Payment',
+            'Student Loan',
+            'Insurance (Car)',
+            'Insurance (Health)',
+            'Insurance (Renters/Home)',
+            'Subscription (Streaming)',
+            'Subscription (Software)',
+            'Subscription (Gym)',
+            'Childcare/Tuition',
+            'Other Fixed Expense'
+        ];
+        const otherExpenseCategories = [
+            'Groceries',
+            'Dining Out',
+            'Entertainment',
+            'Shopping (Clothing)',
+            'Shopping (Electronics)',
+            'Shopping (Household)',
+            'Transport (Gas)',
+            'Transport (Public)',
+            'Transport (Rideshare)',
+            'Personal Care',
+            'Hobbies',
+            'Gifts Given',
+            'Travel',
+            'Home Maintenance',
+            'Pet Care',
+            'Healthcare (Variable)', // Co-pays, prescriptions etc.
+            'Other Expense'
+        ];
+        const billsCategories = [
+            'Utilities (Electric)',
+            'Utilities (Gas)',
+            'Utilities (Water/Sewer)',
+            'Phone Bill',
+            'Internet Bill',
+            'Credit Card Payment',
+            'Medical Bill',
+            'Other Bill'
+        ];
+        const savingsCategories = [
+            'General Savings',
+            'Emergency Fund',
+            'Retirement (401k/IRA)',
+            'Brokerage (ETF/Stocks)',
+            'High-Yield Savings (HYSA)',
+            'Down Payment (House)',
+            'Down Payment (Car)',
+            'Vacation Fund',
+            'Education Fund',
+            'Debt Paydown (Extra Principal)',
+            'Other Savings Goal'
+        ];
+        // Keep a combined list for fallback or other uses if needed, but primary functions will use specific lists
+        const allCategories = [...new Set([...incomeCategories, ...fixedExpenseCategories, ...otherExpenseCategories, ...billsCategories, ...savingsCategories])].sort();
+
+        // --- Helper Functions ---
+        const formatCurrency = (amount) => {
+            // Ensure amount is a number, default to 0 if not
+            const numericAmount = Number(amount) || 0;
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(numericAmount);
+        };
+
+        // Correct Debounce function
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func.apply(this, args); // Use apply to preserve context
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        function showToast(message, type = 'info', duration = 3000) {
+            // Create toast container if it doesn't exist
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            // Simple icons for brevity, could use SVG or Font Awesome
+            let icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+            toast.innerHTML = `<span role="img" aria-label="${type}">${icon}</span><span>${message}</span>`;
+            container.appendChild(toast);
+
+            // Trigger animation
+            setTimeout(() => toast.classList.add('show'), 10);
+
+            // Auto-remove
+            setTimeout(() => {
+                toast.classList.remove('show');
+                // Wait for fade out animation before removing
+                setTimeout(() => {
+                    // Check if the toast element still exists before trying to remove
+                    if (container.contains(toast)) {
+                        container.removeChild(toast);
+                    }
+                }, 400);
+            }, duration);
+        }
+
+        // --- Theme Management ---
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            const themeButton = document.querySelector('.toggle-theme');
+            if (themeButton) {
+                themeButton.textContent = theme === 'dark' ? '🌙' : '🌞';
+                themeButton.setAttribute('aria-label', theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme');
+            }
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            setTheme(newTheme);
+        }
+
+        // --- Datalist Management ---
+        function updateDatalists() {
+            const descriptionsArray = Array.from(uniqueDescriptions).sort(); // Sort alphabetically
+            document.querySelectorAll('datalist[id^="description-list-"]').forEach(datalist => {
+                datalist.innerHTML = ''; // Clear existing options
+                descriptionsArray.forEach(desc => {
+                    const option = document.createElement('option');
+                    option.value = desc;
+                    datalist.appendChild(option);
+                });
+            });
+        }
+
+        function addDescriptionToSuggestions(description) {
+            if (description && description.trim().length > 1) {
+                const trimmedDesc = description.trim();
+                // Check if it's already added before updating DOM
+                if (!uniqueDescriptions.has(trimmedDesc)) {
+                    uniqueDescriptions.add(trimmedDesc);
+                    updateDatalists(); // Update only if new item added
+                }
+            }
+        }
+
+        // --- Table Management ---
+        function addRow(tableId) {
+            console.log(`Adding row to: ${tableId}`);
+            const table = document.getElementById(tableId);
+            if (!table) {
+                console.error(`Table "${tableId}" not found.`);
+                return;
+            }
+            let tbody = table.querySelector('tbody');
+            if (!tbody) {
+                tbody = document.createElement('tbody');
+                table.appendChild(tbody);
+            }
+
+            const newRow = document.createElement('tr');
+            const datalistId = `description-list-${tableId}`;
+
+            // --- START: Determine correct category list and default ---
+            let currentCategoryList = [];
+            let defaultCategory = 'Other'; // Fallback
+
+            switch (tableId) {
+                case 'income-table':
+                    currentCategoryList = incomeCategories;
+                    defaultCategory = incomeCategories[0] || 'Paycheck/Salary';
+                    break;
+                case 'fixed-expenses-table':
+                    currentCategoryList = fixedExpenseCategories;
+                    defaultCategory = fixedExpenseCategories[0] || 'Rent/Mortgage';
+                    break;
+                case 'other-expenses-table':
+                    currentCategoryList = otherExpenseCategories;
+                    defaultCategory = otherExpenseCategories[0] || 'Groceries';
+                    break;
+                case 'bills-table':
+                    currentCategoryList = billsCategories;
+                    defaultCategory = billsCategories[0] || 'Utilities (Electric)';
+                    break;
+                case 'savings-table':
+                    currentCategoryList = savingsCategories;
+                    defaultCategory = savingsCategories[0] || 'General Savings';
+                    break;
+                default:
+                    currentCategoryList = allCategories; // Use combined list as fallback
+            }
+
+            let categoryOptions = currentCategoryList.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+            // --- END: Determine correct category list ---
+
+
+            newRow.innerHTML = `
+        <td data-label="Date"><input type="date" onchange="updateRecapAndSave()"></td>
+        <td data-label="Category">
+            <select class="category-select" onchange="updateRecapAndSave()">
+                ${categoryOptions}
+            </select>
+        </td>
+        <td data-label="Description">
+            <input type="text" list="${datalistId}" class="description-input" placeholder="Description" onchange="updateRecapAndSave()" onblur="addDescriptionToSuggestions(this.value)">
+        </td>
+        <td data-label="Amount"><input type="number" placeholder="0.00" step="0.01" onchange="updateRecapAndSave()"></td>
+        <td data-label="Recurring">
+            <label class="recurring-checkbox-label" title="Mark if this is a regular monthly item">
+                <input type="checkbox" class="recurring-checkbox" onchange="updateRecapAndSave()"> <!-- Removed " Recur" text -->
+            </label>
+        </td>
+        <td data-label="Actions" class="delete-btn" onclick="deleteRow(this)" role="button" tabindex="0" aria-label="Delete row">X</td>
+    `;
+
+            const selectElement = newRow.querySelector('.category-select');
+            if (selectElement) {
+                // Ensure the default exists in the list before setting
+                if (currentCategoryList.includes(defaultCategory)) {
+                    selectElement.value = defaultCategory;
+                } else if (currentCategoryList.length > 0) {
+                    selectElement.value = currentCategoryList[0]; // Fallback to first item
+                }
+            }
+
+
+            tbody.appendChild(newRow);
+            console.log(`Row added successfully to ${tableId}`);
+            const firstInput = newRow.querySelector('input[type="text"]');
+            if (firstInput) {
+                firstInput.focus();
+            }
+        }
+
+        function deleteRow(button) {
+            console.log("Attempting to delete row...");
+            const row = button.closest('tr');
+            if (row) {
+                row.style.transition = 'opacity 0.3s ease-out'; // Add fade out effect
+                row.style.opacity = '0';
+                setTimeout(() => {
+                    row.remove();
+                    updateRecapAndSave(); // Update after removing
+                    showToast("Row deleted.", "info", 1500);
+                    console.log("Row removed and data updated.");
+                }, 300); // Remove after fade out
+            } else {
+                console.error("Could not find parent row for delete button.");
+            }
+        }
+
+        // --- Calculations & Updates ---
+        function calculateTableTotal(tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) return 0;
+            const amountInputs = table.querySelectorAll('tbody input[type="number"]');
+            let total = 0;
+            amountInputs.forEach(input => {
+                total += Number(input.value) || 0;
+            });
+            return total;
+        }
+
+        // --- START: New Budget Allocation Logic ---
+
+        function updateBudgetAllocationVisuals() {
+            console.log("Updating Budget Allocation Visuals...");
+
+            // --- Get Data (Ensure this runs *after* main calculations in updateRecap) ---
+            const incomeData = getTableData('income-table');
+            const fixedExpensesData = getTableData('fixed-expenses-table');
+            const otherExpensesData = getTableData('other-expenses-table');
+            const billsData = getTableData('bills-table');
+            const allExpenses = [...fixedExpensesData, ...otherExpensesData, ...billsData];
+
+            const totalIncome = incomeData.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+            const totalExpenses = allExpenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+            const totalSavings = totalIncome - totalExpenses;
+
+            // --- Categorize Expenses (Simplified Estimation) ---
+            let actualNeeds = 0;
+            let actualWants = 0;
+            // Define which categories *might* fall into Needs/Wants
+            // Adjust these lists based on your defaultCategories and typical user input
+            const likelyNeeds = ['Rent/Mortgage', 'Groceries', 'Utilities', 'Transport', 'Healthcare', 'Bills', 'Income']; // Include Income/Bills as potentially essential
+            const likelyWants = ['Dining Out', 'Entertainment', 'Shopping', 'Subscription', 'Other']; // 'Other' often leans towards wants
+
+            allExpenses.forEach(item => {
+                const amount = Number(item.amount) || 0;
+                const category = item.category || 'Other';
+
+                if (likelyNeeds.includes(category)) {
+                    actualNeeds += amount;
+                } else if (likelyWants.includes(category)) {
+                    actualWants += amount;
+                } else {
+                    // If category isn't in either list, maybe split it or assign to 'Wants' by default?
+                    // For simplicity, let's assign uncategorized to Wants here. Adjust if needed.
+                    actualWants += amount;
+                }
+            });
+
+            // --- Calculate Percentages ---
+            const needsPercent = totalIncome > 0 ? (actualNeeds / totalIncome) * 100 : 0;
+            const wantsPercent = totalIncome > 0 ? (actualWants / totalIncome) * 100 : 0;
+            // Savings percentage is whatever is left, or the calculated savings if positive
+            const savingsPercent = totalIncome > 0 ? Math.max(0, (totalSavings / totalIncome) * 100) : 0; // Ensure savings isn't negative %
+
+            console.log({
+                totalIncome,
+                actualNeeds,
+                actualWants,
+                totalSavings,
+                needsPercent,
+                wantsPercent,
+                savingsPercent
+            });
+
+
+            // --- Update UI Elements ---
+            const formatPercent = (p) => `${p.toFixed(1)}%`;
+            const clampWidth = (p) => Math.min(100, Math.max(0, p)).toFixed(1);
+
+            // Needs Elements
+            const needsAmountEl = document.getElementById('needs-amount');
+            const needsPercentEl = document.getElementById('needs-percent');
+            const needsBarEl = document.getElementById('needs-bar');
+            if (needsAmountEl) needsAmountEl.textContent = formatCurrency(actualNeeds);
+            if (needsPercentEl) needsPercentEl.textContent = formatPercent(needsPercent);
+            if (needsBarEl) {
+                needsBarEl.style.width = `${clampWidth(needsPercent)}%`;
+                needsBarEl.classList.toggle('over-target', needsPercent > 55); // Add class if significantly over 50%
+            }
+
+            // Wants Elements
+            const wantsAmountEl = document.getElementById('wants-amount');
+            const wantsPercentEl = document.getElementById('wants-percent');
+            const wantsBarEl = document.getElementById('wants-bar');
+            if (wantsAmountEl) wantsAmountEl.textContent = formatCurrency(actualWants);
+            if (wantsPercentEl) wantsPercentEl.textContent = formatPercent(wantsPercent);
+            if (wantsBarEl) {
+                wantsBarEl.style.width = `${clampWidth(wantsPercent)}%`;
+                wantsBarEl.classList.toggle('over-target', wantsPercent > 35); // Add class if significantly over 30%
+            }
+
+            // Savings/Debt Elements
+            const savingsAmountEl = document.getElementById('savings-debt-amount');
+            const savingsPercentEl = document.getElementById('savings-debt-percent');
+            const savingsBarEl = document.getElementById('savings-debt-bar');
+            if (savingsAmountEl) savingsAmountEl.textContent = formatCurrency(totalSavings); // Show actual net savings
+            if (savingsPercentEl) savingsPercentEl.textContent = formatPercent(savingsPercent);
+            if (savingsBarEl) {
+                savingsBarEl.style.width = `${clampWidth(savingsPercent)}%`;
+                // Savings doesn't usually have an "over-target" alert style in the same way
+                savingsBarEl.classList.remove('over-target'); // Ensure it's never red
+            }
+
+            // --- Update Net Savings Display in Intro ---
+            const netSavingsDisplayEl = document.getElementById('net-savings-display');
+            if (netSavingsDisplayEl) {
+                netSavingsDisplayEl.textContent = formatCurrency(totalSavings);
+                netSavingsDisplayEl.style.color = totalSavings >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                // Optional: Add/remove a class for background styling based on value
+                netSavingsDisplayEl.classList.toggle('negative-savings', totalSavings < 0);
+                netSavingsDisplayEl.classList.toggle('positive-savings', totalSavings >= 0);
+            }
+
+
+            console.log("Budget Allocation Visuals Updated.");
+        }
+        // --- END: New Budget Allocation Logic ---
+
+        function updateRecap() {
+            console.log("--- updateRecap START ---");
+
+            // --- Get ALL Data First ---
+            const incomeData = getTableData('income-table');
+            const fixedExpensesData = getTableData('fixed-expenses-table');
+            const otherExpensesData = getTableData('other-expenses-table');
+            const billsData = getTableData('bills-table');
+            const savingsData = getTableData('savings-table'); // Fetch savings data
+
+            // --- Combine ONLY expense types ---
+            const allExpenses = [...fixedExpensesData, ...otherExpensesData, ...billsData];
+
+            // --- Log fetched data ---
+            console.log("Data fetched:", {
+                incomeData,
+                fixedExpensesData,
+                otherExpensesData,
+                billsData,
+                savingsData
+            });
+
+            // --- Calculations ---
+            const earned = incomeData.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+            const totalSpent = allExpenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+            const billsPaid = billsData.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+            const totalSavedContributions = savingsData.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+            const saved = earned - totalSpent; // Net Savings (Income - Expenses) - This is correct for the summary net value
+
+            console.log("Calculated values:", {
+                earned,
+                totalSpent,
+                billsPaid,
+                saved,
+                totalSavedContributions
+            });
+
+            // --- Update Summary UI (with checks) ---
+            const earntEl = document.getElementById('earnt');
+            const spentEl = document.getElementById('spent');
+            const debtEl = document.getElementById('debt'); // Bills Paid
+            const savedEl = document.getElementById('saved'); // Net Savings
+            const savedContributionsEl = document.getElementById('saved-contributions'); // Savings Contributions Box
+
+            if (earntEl) earntEl.textContent = formatCurrency(earned);
+            if (spentEl) spentEl.textContent = formatCurrency(totalSpent);
+            if (debtEl) debtEl.textContent = formatCurrency(billsPaid);
+
+            // Update Net Savings display (Income - Expenses)
+            if (savedEl) {
+                savedEl.textContent = formatCurrency(saved);
+                savedEl.classList.toggle('positive-amount', saved >= 0);
+                savedEl.classList.toggle('negative-amount', saved < 0);
+                const savedParent = savedEl.closest('.summary-net');
+                if (savedParent) {
+                    savedParent.classList.toggle('positive-amount', saved >= 0);
+                    savedParent.classList.toggle('negative-amount', saved < 0);
+                }
+            } else {
+                console.error("#saved element not found!");
+            }
+
+            // Update Savings Contributions display
+            if (savedContributionsEl) {
+                savedContributionsEl.textContent = formatCurrency(totalSavedContributions);
+                savedContributionsEl.classList.add('positive-amount'); // Always show as positive contribution
+                savedContributionsEl.classList.remove('negative-amount');
+            } else {
+                console.error("#saved-contributions element not found!");
+            }
+
+            // --- Update Progress Bar (Based on Net Savings) ---
+            updateProgressBar(saved); // Call only ONCE
+
+            // --- Update Analysis Sections ---
+            // Spending Category Insights (uses 'allExpenses')
+            const spendingByCategory = {};
+            allExpenses.forEach(item => {
+                const category = item.category || 'Other';
+                const amount = Number(item.amount) || 0;
+                if (amount > 0) {
+                    spendingByCategory[category] = (spendingByCategory[category] || 0) + amount;
+                }
+            });
+            // --- Ensure you have the logic to update the Spending Insights tab UI ---
+            // This might involve calling populateCategoryList if that's how your UI updates
+            // Example: If using the button click logic:
+            // showCategoryAnalysis(); // Or call the underlying populate function directly if needed on every update
+            // --- OR if you update it directly: ---
+            populateCategoryList(spendingByCategory, totalSpent, {}); // Pass necessary data (mock historical data {} if needed)
+            // --- End Spending Insights Update ---
+
+
+            // --- Update Budget Allocation (50/30/20) ---
+            // This function recalculates totals internally now, which is fine.
+            updateBudgetAllocationVisuals(); // Call the 50/30/20 update
+
+            console.log("--- updateRecap END ---");
+        }
+
+        function updateProgressBar(savedAmount) {
+            const budgetGoalInput = document.getElementById('budget-goal');
+            const budgetGoal = Number(budgetGoalInput?.value) || 0;
+
+            const progressFill = document.getElementById('progress-fill');
+            const progressPercentageSpan = document.getElementById('progress-percentage');
+            const progressAmountText = document.getElementById('progress-amount-text');
+            const progressGoalAmount = document.getElementById('progress-goal-amount');
+
+            if (!progressFill || !progressPercentageSpan || !progressAmountText || !progressGoalAmount) {
+                console.error("Error: One or more progress bar elements not found in the DOM!");
+                return;
+            }
+
+            progressGoalAmount.textContent = formatCurrency(budgetGoal);
+            const numericSavedAmount = Number(savedAmount) || 0;
+
+            let percentage = 0;
+            if (budgetGoal > 0) {
+                percentage = (numericSavedAmount / budgetGoal) * 100;
+            } else if (numericSavedAmount > 0) {
+                percentage = 100; // Show 100% if saving without a goal
+            }
+
+            const clampedWidthPercentage = Math.max(0, Math.min(100, percentage));
+            const displayPercentage = Math.max(0, percentage);
+
+            progressFill.style.width = `${clampedWidthPercentage}%`;
+            progressPercentageSpan.textContent = `${Math.round(displayPercentage)}%`;
+            progressAmountText.textContent = `${formatCurrency(numericSavedAmount)} Saved`;
+
+            progressFill.classList.remove('low', 'medium', 'high');
+            if (budgetGoal <= 0) {
+                if (numericSavedAmount > 0) {
+                    progressFill.classList.add('high');
+                }
+            } else if (percentage < 33) {
+                progressFill.classList.add('low');
+            } else if (percentage < 75) {
+                progressFill.classList.add('medium');
+            } else {
+                progressFill.classList.add('high');
+            }
+
+            // Hide percentage text if bar is too narrow
+            progressPercentageSpan.style.opacity = clampedWidthPercentage < 8 ? '0' : '1';
+            progressPercentageSpan.style.pointerEvents = clampedWidthPercentage < 8 ? 'none' : 'auto';
+        }
+
+        // --- Charting Functions ---
+        function initializeCharts() {
+            console.log("Initializing charts...");
+            updateCategoryChart({});
+            updateIncomeExpenseChart({
+                earned: 0,
+                spent: 0
+            });
+            console.log("Charts initialized.");
+        }
+
+        function updateCategoryChart(categoryData) {
+            console.log("updateCategoryChart - Received data:", JSON.stringify(categoryData));
+            const ctx = document.getElementById('category-chart')?.getContext('2d');
+            if (!ctx) {
+                console.error("Category chart canvas context not found!");
+                return;
+            }
+
+            const labels = Object.keys(categoryData);
+            const dataValues = Object.values(categoryData);
+            console.log("updateCategoryChart - Parsed labels:", labels, "Parsed values:", dataValues);
+
+            const backgroundColors = [
+                '#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f',
+                '#edc949', '#af7aa1', '#ff9da7', '#9c755f', '#bab0ab',
+                '#86bc25', '#f15854', '#b276b2', '#dea746', '#7d90a9'
+            ];
+            const chartColors = labels.map((_, i) => backgroundColors[i % backgroundColors.length]);
+            console.log("updateCategoryChart - Using colors:", chartColors);
+
+            const chartConfig = {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Spending by Category',
+                        data: dataValues,
+                        backgroundColor: chartColors,
+                        borderColor: '#ffffff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += formatCurrency(context.parsed);
+                                        const percentage = ((context.parsed / dataValues.reduce((a, b) => a + b, 0)) * 100).toFixed(1);
+                                        label += ` (${percentage}%)`;
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        legend: {
+                            display: labels.length > 0 && labels.length < 10,
+                            position: 'bottom',
+                            align: 'center',
+                            labels: {
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        }
+                    },
+                    cutout: '0%'
+                }
+            };
+
+            if (labels.length === 0) {
+                console.log("updateCategoryChart - No data, destroying existing chart if it exists.");
+                if (categoryChartInstance) {
+                    categoryChartInstance.destroy();
+                    categoryChartInstance = null;
+                }
+                // Display placeholder message
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = 'grey';
+                ctx.fillText('No spending data for chart.', ctx.canvas.width / 2, Math.max(100, ctx.canvas.height / 2));
+                ctx.restore();
+            } else if (categoryChartInstance) {
+                console.log("updateCategoryChart - Updating existing chart instance.");
+                categoryChartInstance.data.labels = labels;
+                categoryChartInstance.data.datasets[0].data = dataValues;
+                categoryChartInstance.data.datasets[0].backgroundColor = chartColors;
+                categoryChartInstance.options.plugins.legend.display = labels.length > 0 && labels.length < 10;
+                categoryChartInstance.update();
+                console.log("updateCategoryChart - Chart updated.");
+            } else {
+                console.log("updateCategoryChart - Creating new chart instance.");
+                try {
+                    categoryChartInstance = new Chart(ctx, chartConfig);
+                    console.log("updateCategoryChart - New chart created successfully.");
+                } catch (e) {
+                    console.error("Error creating Category Chart:", e);
+                }
+            }
+        }
+
+        function updateIncomeExpenseChart(data) {
+            console.log("updateIncomeExpenseChart - Received data:", JSON.stringify(data));
+            const ctx = document.getElementById('income-expense-chart')?.getContext('2d');
+            if (!ctx) {
+                console.error("Income/Expense chart canvas context not found!");
+                return;
+            }
+
+            const earnedValue = data.earned || 0;
+            const spentValue = data.spent || 0;
+            console.log("updateIncomeExpenseChart - Parsed Earned:", earnedValue, "Parsed Spent:", spentValue);
+
+            const chartConfig = {
+                type: 'pie',
+                data: {
+                    labels: ['Earned', 'Spent'],
+                    datasets: [{
+                        label: 'Income vs Expenses',
+                        data: [earnedValue, spentValue],
+                        backgroundColor: ['rgba(75, 192, 192, 0.8)', 'rgba(255, 99, 132, 0.8)'],
+                        borderColor: ['rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += formatCurrency(context.parsed);
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            align: 'center',
+                            labels: {
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        }
+                    },
+                    cutout: '0%'
+                }
+            };
+
+            if (earnedValue === 0 && spentValue === 0) {
+                console.log("updateIncomeExpenseChart - No data, destroying existing chart if it exists.");
+                if (incomeExpenseChartInstance) {
+                    incomeExpenseChartInstance.destroy();
+                    incomeExpenseChartInstance = null;
+                }
+                // Display placeholder message
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = 'grey';
+                ctx.fillText('No income/spending data for chart.', ctx.canvas.width / 2, Math.max(100, ctx.canvas.height / 2));
+                ctx.restore();
+            } else if (incomeExpenseChartInstance) {
+                console.log("updateIncomeExpenseChart - Updating existing chart instance.");
+                // FIX: Properly update the data array with both values
+                incomeExpenseChartInstance.data.datasets[0].data = [earnedValue, spentValue];
+                incomeExpenseChartInstance.update();
+                console.log("updateIncomeExpenseChart - Chart updated.");
+            } else {
+                console.log("updateIncomeExpenseChart - Creating new chart instance.");
+                try {
+                    incomeExpenseChartInstance = new Chart(ctx, chartConfig);
+                    console.log("updateIncomeExpenseChart - New chart created successfully.");
+                } catch (e) {
+                    console.error("Error creating Income/Expense Chart:", e);
+                }
+            }
+        }
+
+        // --- Category Analysis Display ---
+        function displayCategoryAnalysis(categoryData, totalSpent) {
+            const listElement = document.getElementById('category-list');
+            if (!listElement) {
+                console.error("Category list element not found");
+                return;
+            }
+
+            listElement.innerHTML = ''; // Clear previous list
+
+            const sortedCategories = Object.entries(categoryData)
+                .filter(([, amount]) => amount > 0) // Filter out zero-amount categories
+                .sort(([, a], [, b]) => b - a); // Sort descending by amount
+
+            if (sortedCategories.length === 0) {
+                listElement.innerHTML = '<li>No spending data to analyze.</li>';
+                return;
+            }
+
+            sortedCategories.forEach(([category, amount]) => {
+                const percentage = totalSpent > 0 ? ((amount / totalSpent) * 100).toFixed(1) : 0;
+                const li = document.createElement('li');
+                li.innerHTML = `
+            <span class="category-name">${category}</span>
+            <span>
+                <span class="category-amount">${formatCurrency(amount)}</span>
+                <span class="category-percent">(${percentage}%)</span>
+            </span>
+        `;
+                listElement.appendChild(li);
+            });
+        }
+
+        // --- Data Persistence (Modified for Monthly Storage) ---
+        function getTableData(tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) {
+                console.warn(`getTableData: Table #${tableId} not found.`);
+                return [];
+            }
+            const rows = table.querySelectorAll('tbody tr');
+            return Array.from(rows).map((row) => {
+                // Select elements within the current row more specifically
+                const dateInput = row.querySelector('input[type="date"]');
+                const categorySelect = row.querySelector('select.category-select');
+                const descriptionInput = row.querySelector('input.description-input');
+                const amountInput = row.querySelector('input[type="number"]');
+                const recurringCheckbox = row.querySelector('input.recurring-checkbox');
+
+                return {
+                    date: dateInput?.value || '',
+                    category: categorySelect?.value || 'Other',
+                    description: descriptionInput?.value || '',
+                    amount: amountInput?.value || '',
+                    isRecurring: recurringCheckbox?.checked || false
+                };
+            });
+        }
+
+        function saveBudgetData() {
+            try {
+                const currentMonthKey = document.getElementById('month')?.value;
+                if (!currentMonthKey) {
+                    console.warn("No month selected, cannot save data.");
+                    return;
+                }
+
+                // Load existing data to merge/update
+                let allData = {};
+                try {
+                    allData = JSON.parse(localStorage.getItem('budgetPlannerData')) || {};
+                } catch (e) {
+                    console.error("Error parsing existing monthly data", e);
+                }
+
+                // Get data from tables for the current view
+                allData[currentMonthKey] = {
+                    'income-table': getTableData('income-table'),
+                    'fixed-expenses-table': getTableData('fixed-expenses-table'),
+                    'other-expenses-table': getTableData('other-expenses-table'),
+                    'bills-table': getTableData('bills-table'),
+                    'savings-table': getTableData('savings-table'),
+                };
+
+                // Save the updated structure for all months
+                localStorage.setItem('budgetPlannerData', JSON.stringify(allData));
+
+                // Save top-level info separately
+                const infoData = {
+                    name: document.getElementById('name')?.value || '',
+                    budgetGoal: document.getElementById('budget-goal')?.value || '',
+                    lastMonth: currentMonthKey
+                };
+                localStorage.setItem('budgetPlannerInfo', JSON.stringify(infoData));
+            } catch (error) {
+                console.error("Failed to save budget data:", error);
+                showToast("Error saving data.", "error");
+            }
+        }
+
+        function updateRecapAndSave() {
+            updateRecap();
+            saveBudgetData(); // Save whenever recap is updated
+        }
+
+
+        // --- Load Budget Function --
+        function loadBudgetData() {
+            try {
+                // Load top-level info first
+                const infoData = JSON.parse(localStorage.getItem('budgetPlannerInfo')) || {};
+                document.getElementById('name').value = infoData.name || '';
+                document.getElementById('budget-goal').value = infoData.budgetGoal || '';
+
+                const monthInput = document.getElementById('month');
+                // Set month - try last used, otherwise default to current month
+                if (!monthInput.value) { // Only set if not already set (e.g., by user change)
+                    if (infoData.lastMonth) {
+                        monthInput.value = infoData.lastMonth;
+                    } else {
+                        const now = new Date();
+                        const year = now.getFullYear();
+                        const month = (now.getMonth() + 1).toString().padStart(2, '0');
+                        monthInput.value = `${year}-${month}`;
+                    }
+                }
+
+                const currentMonthKey = monthInput.value;
+                console.log(`Loading data for month: ${currentMonthKey}`);
+
+                // Load all monthly data from storage
+                const allData = JSON.parse(localStorage.getItem('budgetPlannerData')) || {};
+                const monthData = allData[currentMonthKey] || {}; // Get data specific to *this* month
+
+                // --- Load Unique Descriptions ---
+                uniqueDescriptions.clear();
+                Object.values(allData).forEach(mData => {
+                    Object.values(mData).forEach(tableItems => {
+                        tableItems.forEach(item => {
+                            if (item.description) uniqueDescriptions.add(item.description.trim());
+                        });
+                    });
+                });
+                updateDatalists(); // Populate dropdowns
+
+                const tableIds = ['income-table', 'fixed-expenses-table', 'other-expenses-table', 'bills-table', 'savings-table'];
+
+                // --- START Outer Loop: Process each table ONCE ---
+                tableIds.forEach(tableId => {
+                    const table = document.getElementById(tableId);
+                    const tbody = table ? table.querySelector('tbody') : null;
+                    if (!tbody) {
+                        console.warn(`Tbody not found for table: ${tableId}`);
+                        return; // Skip this table if tbody doesn't exist
+                    }
+                    tbody.innerHTML = ''; // Clear previous rows for this table
+
+                    const tableRowsData = monthData[tableId] || [];
+
+                    // --- Determine correct category list for THIS table ---
+                    let currentCategoryList = [];
+                    switch (tableId) {
+                        case 'income-table':
+                            currentCategoryList = incomeCategories;
+                            break;
+                        case 'fixed-expenses-table':
+                            currentCategoryList = fixedExpenseCategories;
+                            break;
+                        case 'other-expenses-table':
+                            currentCategoryList = otherExpenseCategories;
+                            break;
+                        case 'bills-table':
+                            currentCategoryList = billsCategories;
+                            break;
+                        case 'savings-table':
+                            currentCategoryList = savingsCategories;
+                            break;
+                        default:
+                            currentCategoryList = allCategories; // Fallback
+                    }
+                    // --- END Determine correct category list ---
+
+                    // --- Process rows for THIS table ---
+                    if (tableRowsData.length > 0) {
+                        tableRowsData.forEach(rowData => {
+                            const newRow = document.createElement('tr');
+                            // --- USE currentCategoryList determined above ---
+                            let categoryOptions = currentCategoryList.map(cat =>
+                                `<option value="${cat}" ${cat === rowData.category ? 'selected' : ''}>${cat}</option>`
+                            ).join('');
+                            const datalistId = `description-list-${tableId}`;
+
+                            newRow.innerHTML = `
+                                <td data-label="Date"><input type="date" value="${rowData.date || ''}" onchange="updateRecapAndSave()"></td>
+                                <td data-label="Category"><select class="category-select" onchange="updateRecapAndSave()">${categoryOptions}</select></td>
+                                <td data-label="Description"><input type="text" list="${datalistId}" class="description-input" value="${rowData.description || ''}" placeholder="Description" onchange="updateRecapAndSave()" onblur="addDescriptionToSuggestions(this.value)"></td>
+                                <td data-label="Amount"><input type="number" value="${rowData.amount || ''}" placeholder="0.00" step="0.01" onchange="updateRecapAndSave()"></td>
+                                <td data-label="Recurring"><label class="recurring-checkbox-label" title="Mark if this is a regular monthly item"><input type="checkbox" class="recurring-checkbox" ${rowData.isRecurring ? 'checked' : ''} onchange="updateRecapAndSave()"> Recur</label></td>
+                                <td data-label="Actions" class="delete-btn" onclick="deleteRow(this)" role="button" tabindex="0" aria-label="Delete row">X</td>
+                            `;
+                            tbody.appendChild(newRow);
+                        });
+                    } else if (tableId !== 'income-table') { // Don't automatically add empty rows to income table
+                        ensureInitialRowsForTable(tableId);
+                    }
+                    // --- END Process rows for THIS table ---
+
+                }); // --- END Outer Loop ---
+
+                updateRecap(); // Update calculations AFTER all tables are loaded
+
+            } catch (error) {
+                console.error("Failed to load or parse budget data:", error);
+                showToast("Error loading data. Resetting.", "error");
+                localStorage.removeItem('budgetPlannerData');
+                localStorage.removeItem('budgetPlannerInfo');
+                ensureInitialRows(); // Ensure initial rows are added after reset
+                updateRecap();
+            }
+        }
+
+        function ensureInitialRows() {
+            const tableIds = ['income-table', 'fixed-expenses-table', 'other-expenses-table', 'bills-table', 'savings-table'];
+            tableIds.forEach(ensureInitialRowsForTable);
+        }
+
+
+        function ensureInitialRowsForTable(tableId) {
+            const table = document.getElementById(tableId);
+            if (table) {
+                let tbody = table.querySelector('tbody');
+                if (!tbody) {
+                    tbody = document.createElement('tbody');
+                    table.appendChild(tbody);
+                }
+                if (tbody.children.length === 0) {
+                    addRow(tableId);
+                }
+            }
+        }
+
+
+        // --- Recurring Items Function ---
+        function addRecurringForMonth() {
+            const currentMonthKey = document.getElementById('month')?.value;
+            if (!currentMonthKey) {
+                showToast("Please select a month first.", "error");
+                return;
+            }
+
+            console.log(`Adding recurring items for ${currentMonthKey}`);
+            let addedCount = 0;
+            let allData = {};
+            try {
+                allData = JSON.parse(localStorage.getItem('budgetPlannerData')) || {};
+            } catch (e) {
+                console.error("Error parsing recurring data: ", e); // Added error logging
+            }
+
+            // --- Get currently displayed items for the target month to avoid duplicates ---
+            const currentIncomeItems = getTableData('income-table').map(i => `${i.category}-${i.description}-${i.amount}`);
+            const currentFixedItems = getTableData('fixed-expenses-table').map(i => `${i.category}-${i.description}-${i.amount}`);
+            const currentOtherItems = getTableData('other-expenses-table').map(i => `${i.category}-${i.description}-${i.amount}`);
+            const currentBillsItems = getTableData('bills-table').map(i => `${i.category}-${i.description}-${i.amount}`);
+            const currentSavingsItems = getTableData('savings-table').map(i => `${i.category}-${i.description}-${i.amount}`); // Added Savings check
+
+            const currentItemsMap = {
+                'income-table': new Set(currentIncomeItems),
+                'fixed-expenses-table': new Set(currentFixedItems),
+                'other-expenses-table': new Set(currentOtherItems),
+                'bills-table': new Set(currentBillsItems),
+                'savings-table': new Set(currentSavingsItems) // Added Savings map
+            };
+
+            // Look through ALL stored months for items marked as recurring
+            Object.entries(allData).forEach(([monthKey, monthData]) => {
+                // Optional: Skip adding items from the *current* month itself?
+                if (monthKey === currentMonthKey) return; // Uncomment this line if you DON'T want items from the current month added
+
+                Object.entries(monthData).forEach(([tableId, items]) => {
+                    // Ensure 'items' is an array before trying to iterate
+                    if (!Array.isArray(items)) {
+                        console.warn(`Data for ${tableId} in month ${monthKey} is not an array. Skipping.`);
+                        return; // Skip if data is not in expected format
+                    }
+
+                    const targetTable = document.getElementById(tableId);
+                    const targetTbody = targetTable?.querySelector('tbody');
+                    // --- Crucial Check: Make sure the target table exists in the DOM! ---
+                    if (!targetTable || !targetTbody) {
+                        console.warn(`Target table or tbody not found for ID: ${tableId}. Skipping recurring items for this table.`);
+                        return; // Skip if target table/tbody doesn't exist
+                    }
+
+                    items.forEach(item => {
+                        // --- Add check: Ensure item is an object and has isRecurring property ---
+                        if (item && typeof item === 'object' && item.isRecurring) {
+                            // Use empty strings as default for signature parts if they are missing
+                            const itemCategory = item.category || '';
+                            const itemDescription = item.description || '';
+                            const itemAmount = item.amount || '';
+                            const itemSignature = `${itemCategory}-${itemDescription}-${itemAmount}`;
+
+                            // Check if the map for this tableId exists before accessing .has()
+                            const alreadyExists = currentItemsMap[tableId] ? currentItemsMap[tableId].has(itemSignature) : false;
+
+                            if (!alreadyExists) {
+                                console.log(`Adding recurring item to ${tableId}:`, item);
+                                const newRow = document.createElement('tr');
+
+                                // Determine correct category list for the target table
+                                let currentCategoryList = [];
+                                switch (tableId) {
+                                    case 'income-table':
+                                        currentCategoryList = incomeCategories;
+                                        break;
+                                    case 'fixed-expenses-table':
+                                        currentCategoryList = fixedExpenseCategories;
+                                        break;
+                                    case 'other-expenses-table':
+                                        currentCategoryList = otherExpenseCategories;
+                                        break;
+                                    case 'bills-table':
+                                        currentCategoryList = billsCategories;
+                                        break;
+                                    case 'savings-table':
+                                        currentCategoryList = savingsCategories;
+                                        break;
+                                    default:
+                                        currentCategoryList = allCategories;
+                                }
+
+                                // Generate options, ensuring the item's category is included if it's custom
+                                if (!currentCategoryList.includes(itemCategory)) {
+                                    currentCategoryList.push(itemCategory); // Add temporarily if missing
+                                }
+                                let categoryOptions = currentCategoryList.map(cat => `<option value="${cat}" ${cat === itemCategory ? 'selected' : ''}>${cat}</option>`).join('');
+
+                                const datalistId = `description-list-${tableId}`;
+
+                                newRow.innerHTML = `
+                         <td data-label="Date"><input type="date" value="" onchange="updateRecapAndSave()"></td>
+                         <td data-label="Category"><select class="category-select" onchange="updateRecapAndSave()">${categoryOptions}</select></td>
+                         <td data-label="Description"><input type="text" list="${datalistId}" class="description-input" value="${itemDescription}" placeholder="Description" onchange="updateRecapAndSave()" onblur="addDescriptionToSuggestions(this.value)"></td>
+                         <td data-label="Amount"><input type="number" value="${itemAmount}" placeholder="0.00" step="0.01" onchange="updateRecapAndSave()"></td>
+                         <td data-label="Recurring">
+                             <label class="recurring-checkbox-label" title="Mark if this is a regular monthly item">
+                                 <input type="checkbox" class="recurring-checkbox" checked onchange="updateRecapAndSave()"> <!-- Removed " Recur" text -->
+                             </label>
+                         </td>
+                         <td data-label="Actions" class="delete-btn" onclick="deleteRow(this)" role="button" tabindex="0" aria-label="Delete row">X</td>
+                     `;
+                                targetTbody.appendChild(newRow);
+                                addedCount++;
+                                addDescriptionToSuggestions(itemDescription);
+
+                                // Add to current items map to prevent duplicate additions within this run
+                                // Ensure the map exists before adding
+                                if (currentItemsMap[tableId]) {
+                                    currentItemsMap[tableId].add(itemSignature);
+                                }
+
+                            } // end if (!alreadyExists)
+                        } // end if (item && item.isRecurring)
+                    }); // end items.forEach
+                }); // end Object.entries(monthData).forEach
+            }); // end Object.entries(allData).forEach
+
+            // --- THIS is the correct place for the final check and toast messages ---
+            if (addedCount > 0) {
+                showToast(`Added ${addedCount} recurring item(s).`, 'success');
+                updateRecapAndSave(); // Recalculate and save changes
+            } else {
+                showToast("No new recurring items found to add for this month.", 'info');
+            }
+        }
+
+        // --- Reset Data ---
+        function resetAllData() {
+            if (confirm("ARE YOU SURE?\nThis will permanently delete all budget data entered for ALL months.")) {
+                console.log("Resetting all data...");
+                localStorage.removeItem('budgetPlannerData');
+                localStorage.removeItem('budgetPlannerInfo');
+
+                // Clear UI
+                document.getElementById('name').value = '';
+                document.getElementById('budget-goal').value = '';
+                const monthInput = document.getElementById('month');
+                const now = new Date();
+                monthInput.value = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+
+                const tableIds = ['income-table', 'fixed-expenses-table', 'other-expenses-table', 'bills-table', 'savings-table'];
+                tableIds.forEach(id => {
+                    const tbody = document.querySelector(`#${id} tbody`);
+                    if (tbody) tbody.innerHTML = '';
+                });
+
+                uniqueDescriptions.clear();
+                updateDatalists();
+                ensureInitialRows();
+                updateRecap(); // This will also re-init charts with empty data
+                showToast("All budget data has been reset.", "info");
+            }
+        }
+
+        // --- PDF Generation ---
+        function prepareForPrint() {
+            console.log("--- prepareForPrint START ---");
+            document.body.classList.add('print-active');
+
+            // --- Add this part to update the title ---
+            const name = document.getElementById('name')?.value || 'User';
+            const monthInput = document.getElementById('month');
+            let monthStr = '';
+            if (monthInput && monthInput.value) {
+                try {
+                    const [y, m] = monthInput.value.split('-');
+                    const d = new Date(y, m - 1);
+                    monthStr = d.toLocaleString('en-US', {
+                        month: 'long',
+                        year: 'numeric'
+                    });
+                } catch (e) {
+                    monthStr = monthInput.value;
+                }
+            }
+            document.title = `Budget Planner - ${name} - ${monthStr}`;
+
+            // Handle top-level inputs (Keep this part as is)
+            const topInputs = ['name', 'month', 'budget-goal'];
+            topInputs.forEach(id => {
+                const input = document.getElementById(id);
+                // ... (keep existing logic for top inputs) ...
+                if (input && input.offsetParent !== null) { // Check visibility
+                    const printValueSpan = document.createElement('span');
+                    printValueSpan.className = 'print-value print-top-value';
+                    let displayValue = input.value || 'N/A';
+                    if (input.type === 'month' && input.value) {
+                        try {
+                            const [y, m] = input.value.split('-');
+                            const d = new Date(y, m - 1);
+                            displayValue = d.toLocaleString('en-US', {
+                                month: 'long',
+                                year: 'numeric'
+                            });
+                        } catch (e) {}
+                    } else if (input.id === 'budget-goal') {
+                        displayValue = formatCurrency(input.value);
+                    }
+                    printValueSpan.textContent = displayValue;
+                    input.style.display = 'none'; // Hide input
+                    // Check if a span already exists before inserting (prevent duplicates on error/rerun)
+                    if (!input.parentNode.querySelector('.print-top-value')) {
+                        input.parentNode.insertBefore(printValueSpan, input.nextSibling);
+                    }
+                    printValueSpan.originalInput = input; // Store reference
+                }
+            });
+
+            // Handle table inputs
+            document.querySelectorAll('table:not(#recap-table) tbody tr').forEach(row => {
+                // --- Keep existing logic for Date, Category, Description, Amount cells ---
+                // Example for Date (Cell 0)
+                const dateInput = row.querySelector('input[type="date"]');
+                const dateCell = row.cells[0];
+                if (dateInput && dateInput.offsetParent !== null) {
+                    if (!dateCell.querySelector('.print-value')) { // Prevent duplicates
+                        const span = document.createElement('span');
+                        span.className = 'print-value';
+                        try {
+                            span.textContent = dateInput.value ? new Date(dateInput.value + 'T00:00:00').toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                            }) : '-';
+                        } catch (e) {
+                            span.textContent = dateInput.value || '-';
+                        }
+                        dateInput.style.display = 'none';
+                        dateCell.appendChild(span);
+                        span.originalInput = dateInput;
+                    }
+                }
+                // Example for Category (Cell 1)
+                const categorySelect = row.querySelector('select.category-select');
+                const categoryCell = row.cells[1];
+                if (categorySelect && categorySelect.offsetParent !== null) {
+                    if (!categoryCell.querySelector('.print-value')) { // Prevent duplicates
+                        const span = document.createElement('span');
+                        span.className = 'print-value';
+                        span.textContent = categorySelect.value || 'Other';
+                        categorySelect.style.display = 'none';
+                        categoryCell.appendChild(span);
+                        span.originalInput = categorySelect;
+                    }
+                }
+                // Example for Description (Cell 2)
+                const descriptionInput = row.querySelector('input.description-input');
+                const descriptionCell = row.cells[2];
+                if (descriptionInput && descriptionInput.offsetParent !== null) {
+                    if (!descriptionCell.querySelector('.print-value')) { // Prevent duplicates
+                        const span = document.createElement('span');
+                        span.className = 'print-value';
+                        span.textContent = descriptionInput.value || '-';
+                        descriptionInput.style.display = 'none';
+                        descriptionCell.appendChild(span);
+                        span.originalInput = descriptionInput;
+                    }
+                }
+                // Example for Amount (Cell 3)
+                const amountInput = row.querySelector('input[type="number"]');
+                const amountCell = row.cells[3];
+                if (amountInput && amountInput.offsetParent !== null) {
+                    if (!amountCell.querySelector('.print-value')) { // Prevent duplicates
+                        const span = document.createElement('span');
+                        span.className = 'print-value';
+                        span.textContent = formatCurrency(amountInput.value || 0);
+                        amountInput.style.display = 'none';
+                        amountCell.appendChild(span);
+                        span.originalInput = amountInput;
+                    }
+                }
+
+
+                // --- **NEW/MODIFIED LOGIC for Recurring Cell (Cell 4)** ---
+                const recurringCheckbox = row.querySelector('input.recurring-checkbox');
+                const recurringCell = row.cells[4]; // 5th cell, index 4
+                const recurringLabel = row.querySelector('.recurring-checkbox-label'); // Get label
+
+                if (recurringCheckbox && recurringCell && recurringLabel) {
+                    // Hide the original input and label elements visually for print
+                    // Note: CSS already hides the label, but hiding input directly is good too.
+                    recurringCheckbox.style.display = 'none';
+                    recurringLabel.style.display = 'none'; // Explicitly hide label too
+
+                    // Only add span if it doesn't exist
+                    if (!recurringCell.querySelector('.print-value')) {
+                        const span = document.createElement('span');
+                        span.className = 'print-value';
+                        const isChecked = recurringCheckbox.checked;
+
+                        if (isChecked) {
+                            span.textContent = '✓'; // Use a checkmark character
+                            span.classList.add('recurring-yes');
+                        } else {
+                            span.textContent = '-'; // Use a dash
+                            span.classList.add('recurring-no');
+                        }
+                        recurringCell.appendChild(span);
+                        span.originalInput = recurringCheckbox; // Store reference to checkbox
+                        span.originalLabel = recurringLabel; // Store reference to label
+                    }
+                }
+                // --- END NEW/MODIFIED LOGIC for Recurring Cell ---
+
+
+                // Hide Actions Cell Content (Cell 5) - Already handled by CSS, but good practice
+                const actionCell = row.cells[5]; // 6th cell, index 5
+                if (actionCell) {
+                    // Direct children hiding might be safer than visibility
+                    Array.from(actionCell.children).forEach(child => child.style.display = 'none');
+                    // Alternatively, rely purely on the CSS `display: none !important;`
+                }
+            });
+
+            console.log("--- prepareForPrint END ---");
+        }
+
+
+        function restoreAfterPrint() {
+            console.log("--- restoreAfterPrint START ---");
+            const spans = document.querySelectorAll('.print-value');
+
+            spans.forEach((span) => {
+                if (span.originalInput && typeof span.originalInput === 'object') {
+                    span.originalInput.style.display = ''; // Restore original display
+                    // If it was a select, ensure it's block or default
+                    if (span.originalInput.tagName === 'SELECT') span.originalInput.style.display = 'block';
+                }
+                span.remove(); // Remove the span itself
+            });
+
+            // Restore visibility of hidden cells
+            document.querySelectorAll('td[data-label="Recurring"], td[data-label="Actions"]').forEach(td => {
+                td.style.visibility = '';
+                td.style.padding = ''; // Reset padding if needed
+                td.style.border = ''; // Reset border if needed
+            });
+
+            document.title = "Monthly Budget Planner";
+            document.body.classList.remove('print-active');
+            console.log("--- restoreAfterPrint END ---");
+        }
+
+        function generatePDF() {
+            try {
+                console.log("generatePDF called");
+                prepareForPrint();
+
+                setTimeout(() => {
+                    try {
+                        console.log("Calling window.print()...");
+                        window.print();
+                        console.log("window.print() called.");
+
+                        setTimeout(restoreAfterPrint, 2000);
+
+                    } catch (printError) {
+                        console.error("Error during window.print():", printError);
+                        restoreAfterPrint();
+                    }
+                }, 300);
+
+            } catch (prepareError) {
+                console.error("Error during prepareForPrint():", prepareError);
+                restoreAfterPrint();
+            }
+        }
+
+        // Tab switching functionality
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+
+            // Show selected tab
+            const tabElement = document.getElementById(tabName + '-tab');
+            if (tabElement) {
+                tabElement.classList.add('active');
+            } else {
+                console.error(`Tab content element with ID ${tabName + '-tab'} not found.`);
+            }
+
+
+            // Add active class to clicked button
+            const buttonElement = document.querySelector(`.tab-button[onclick="showTab('${tabName}')"]`);
+            if (buttonElement) {
+                buttonElement.classList.add('active');
+            } else {
+                console.error(`Tab button for '${tabName}' not found.`);
+            }
+        }
+
+        // Initialize data for insights panel
+        function initializeInsights(categoryData, totalSpent, historicalData) {
+            // If no historical data provided, create placeholder
+            if (!historicalData) {
+                historicalData = {
+                    'Dining Out': {
+                        average: 15
+                    },
+                    'Bills': {
+                        average: 50
+                    },
+                    'Other': {
+                        average: 35
+                    }
+                };
+            }
+
+            // Find top spending category
+            const sortedCategories = Object.entries(categoryData)
+                .filter(([, amount]) => amount > 0)
+                .sort(([, a], [, b]) => b - a);
+
+            if (sortedCategories.length > 0) {
+                const [topCategory, topAmount] = sortedCategories[0];
+                const percentage = totalSpent > 0 ? ((topAmount / totalSpent) * 100).toFixed(1) : 0;
+
+                // Update top category card
+                document.getElementById('top-category-name').textContent = topCategory;
+                document.getElementById('top-category-amount').textContent = formatCurrency(topAmount);
+                document.getElementById('top-category-percent').textContent = `(${percentage}%)`;
+
+                // Update recommendation based on category
+                let recommendation = "";
+                switch (topCategory) {
+                    case 'Bills':
+                        recommendation = "Consider reviewing your bill providers and looking for better rates or bundle opportunities.";
+                        break;
+                    case 'Dining Out':
+                        recommendation = "Try meal prepping or cooking at home more often to reduce expenses.";
+                        break;
+                    case 'Groceries':
+                        recommendation = "Consider using coupons, buying in bulk, or switching to store brands to save money.";
+                        break;
+                    default:
+                        recommendation = "Review your spending in this category to identify potential savings opportunities.";
+                }
+                document.getElementById('top-category-recommendation').textContent = recommendation;
+            }
+
+            // Find unusual spending
+            const unusualSpending = [];
+            let alertCount = 0;
+
+            sortedCategories.forEach(([category, amount]) => {
+                if (historicalData[category] && amount > 0) {
+                    const avgAmount = historicalData[category].average;
+                    const percentDiff = ((amount - avgAmount) / avgAmount * 100).toFixed(0);
+
+                    if (percentDiff > 20) { // If spending is 20% above average
+                        unusualSpending.push({
+                            category,
+                            amount,
+                            percentDiff
+                        });
+                        alertCount++;
+                    }
+                }
+            });
+
+            // Update unusual spending card
+            document.getElementById('unusual-count').textContent = alertCount;
+
+            if (unusualSpending.length > 0) {
+                const unusualList = document.getElementById('unusual-spending-list');
+                unusualList.innerHTML = '';
+
+                // Background colors for categories (match with the chart colors)
+                const categoryColors = {
+                    'Bills': '#4e79a7',
+                    'Dining Out': '#f28e2c',
+                    'Other': '#e15759',
+                    'Groceries': '#76b7b2',
+                    'Entertainment': '#59a14f',
+                    'Transport': '#edc949'
+                };
+
+                unusualSpending.forEach(item => {
+                    const unusualItem = document.createElement('div');
+                    unusualItem.className = 'unusual-item';
+                    unusualItem.innerHTML = `
+                <div class="unusual-category">
+                    <span class="dot" style="background-color: ${categoryColors[item.category] || '#bab0ab'};"></span>
+                    <span class="unusual-name">${item.category}</span>
+                </div>
+                <div class="unusual-details">
+                    <span class="unusual-amount">${formatCurrency(item.amount)}</span>
+                    <span class="unusual-trend">↑ ${item.percentDiff}% from average</span>
+                </div>
+            `;
+                    unusualList.appendChild(unusualItem);
+                });
+            } else {
+                document.getElementById('unusual-spending-list').innerHTML =
+                    '<p>No unusual spending detected this month. Great job!</p>';
+            }
+
+            // Generate savings opportunities based on data
+            generateSavingsOpportunities(categoryData, totalSpent);
+        }
+
+        // Generate savings opportunities
+        function generateSavingsOpportunities(categoryData, totalSpent) {
+            const opportunitiesList = document.getElementById('savings-opportunities-list');
+            opportunitiesList.innerHTML = '';
+
+            const opportunities = [];
+
+            // Dining out opportunity
+            if (categoryData['Dining Out'] && categoryData['Dining Out'] > 0) {
+                opportunities.push({
+                    icon: '🍽️',
+                    title: 'Reduce Dining Out',
+                    description: `Cooking at home 2 more times per month could save you approximately ${formatCurrency(categoryData['Dining Out'] * 0.3)}.`
+                });
+            }
+
+            // Bills opportunity
+            if (categoryData['Bills'] && categoryData['Bills'] > 20) {
+                opportunities.push({
+                    icon: '💸',
+                    title: 'Bill Negotiation',
+                    description: 'Try negotiating your bills - many providers offer discounts when asked.'
+                });
+            }
+
+            // Subscription opportunity
+            if (categoryData['Subscription'] && categoryData['Subscription'] > 0) {
+                opportunities.push({
+                    icon: '📱',
+                    title: 'Review Subscriptions',
+                    description: 'Check for unused subscriptions that you could cancel or pause.'
+                });
+            }
+
+            // General saving opportunity
+            if (totalSpent > 0) {
+                opportunities.push({
+                    icon: '💡',
+                    title: '50/30/20 Budget Rule',
+                    description: 'Try allocating 50% of income to needs, 30% to wants, and 20% to savings for better financial health.'
+                });
+            }
+
+            // Create and add opportunity elements
+            opportunities.slice(0, 3).forEach(opportunity => {
+                const opportunityEl = document.createElement('div');
+                opportunityEl.className = 'savings-opportunity';
+                opportunityEl.innerHTML = `
+            <div class="opportunity-icon">${opportunity.icon}</div>
+            <div class="opportunity-details">
+                <span class="opportunity-title">${opportunity.title}</span>
+                <p class="opportunity-description">${opportunity.description}</p>
+            </div>
+        `;
+                opportunitiesList.appendChild(opportunityEl);
+            });
+
+        }
+
+        function generateFinancialInsights() {
+            // First, show an informative toast about what's happening
+            showToast("Analyzing your budget data...", "info");
+
+            setTimeout(() => {
+                // Get current data
+                const incomeData = getTableData('income-table');
+                const fixedExpensesData = getTableData('fixed-expenses-table');
+                const otherExpensesData = getTableData('other-expenses-table');
+                const billsData = getTableData('bills-table');
+
+                const allExpenses = [...fixedExpensesData, ...otherExpensesData, ...billsData];
+                const earned = incomeData.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+                const totalSpent = allExpenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+                const saved = earned - totalSpent;
+
+                // Create category spending breakdown
+                const spendingByCategory = {};
+                allExpenses.forEach(item => {
+                    const category = item.category || 'Other';
+                    const amount = Number(item.amount) || 0;
+                    if (amount > 0) {
+                        spendingByCategory[category] = (spendingByCategory[category] || 0) + amount;
+                    }
+                });
+
+                // Mock historical data for comparing with current spending
+                const historicalData = {};
+                Object.keys(spendingByCategory).forEach(category => {
+                    // Simulate historical average (75-95% of current amount for demonstration)
+                    const factor = 0.75 + Math.random() * 0.2;
+                    historicalData[category] = {
+                        average: spendingByCategory[category] * factor
+                    };
+                });
+
+                // Initialize insights and allocation tabs
+                initializeInsights(spendingByCategory, totalSpent, historicalData);
+                initializeAllocation(saved);
+
+                // Show insights tab
+                showTab('insights');
+
+                // Scroll to analysis section
+                document.querySelector('.analysis-section').scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+
+                // Show a more detailed success message
+                showToast("Budget analysis complete! Scroll down to see your personalized insights and recommendations.", "success", 5000);
+
+                // Add a highlight effect to the analysis section
+                const analysisSection = document.querySelector('.analysis-section');
+                analysisSection.style.transition = "box-shadow 0.5s ease";
+                analysisSection.style.boxShadow = "0 0 20px rgba(46, 204, 113, 0.5)";
+
+                // Remove highlight effect after 2 seconds
+                setTimeout(() => {
+                    analysisSection.style.boxShadow = "";
+                }, 2000);
+            }, 500); // Short delay to show the "analyzing" message first
+        }
+
+        // Function to show category analysis modal
+        function showCategoryAnalysis() {
+            // Get spending data from tables
+            const fixedExpensesData = getTableData('fixed-expenses-table');
+            const otherExpensesData = getTableData('other-expenses-table');
+            const billsData = getTableData('bills-table');
+
+            const allExpenses = [...fixedExpensesData, ...otherExpensesData, ...billsData];
+            const totalSpent = allExpenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+
+            // Create category spending breakdown
+            const spendingByCategory = {};
+            allExpenses.forEach(item => {
+                const category = item.category || 'Other';
+                const amount = Number(item.amount) || 0;
+                if (amount > 0) {
+                    spendingByCategory[category] = (spendingByCategory[category] || 0) + amount;
+                }
+            });
+
+            // Generate mock historical data
+            const historicalData = {};
+            Object.keys(spendingByCategory).forEach(category => {
+                // Create a random factor between 0.75 and 0.95 to simulate historical average
+                const factor = 0.75 + Math.random() * 0.2;
+                historicalData[category] = {
+                    average: spendingByCategory[category] * factor
+                };
+            });
+
+            // Populate the clickable category list
+            populateCategoryList(spendingByCategory, totalSpent, historicalData);
+
+            // Show insights tab
+            showTab('insights');
+
+            // Scroll to analysis section
+            document.querySelector('.analysis-section').scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+
+            // Show a success message
+            showToast("Select a spending category to see insights", "info", 3000);
+        }
+
+        // Function to populate the clickable category list
+        function populateCategoryList(spendingByCategory, totalSpent, historicalData) {
+            const categoryList = document.getElementById('clickable-category-list');
+
+            // Clear existing list
+            categoryList.innerHTML = '';
+
+            // Sort categories by amount (highest first)
+            const sortedCategories = Object.entries(spendingByCategory)
+                .filter(([, amount]) => amount > 0)
+                .sort(([, a], [, b]) => b - a);
+
+            if (sortedCategories.length === 0) {
+                categoryList.innerHTML = '<li class="no-categories">No spending data available</li>';
+                return;
+            }
+
+            // Background colors for categories (match with the chart colors)
+            const categoryColors = {
+                'Bills': '#4e79a7',
+                'Dining Out': '#f28e2c',
+                'Other': '#e15759',
+                'Groceries': '#76b7b2',
+                'Entertainment': '#59a14f',
+                'Transport': '#edc949',
+                'Rent/Mortgage': '#af7aa1',
+                'Utilities': '#ff9da7',
+                'Healthcare': '#9c755f',
+                'Shopping': '#bab0ab'
+            };
+
+            // Add each category to the list
+            sortedCategories.forEach(([category, amount]) => {
+                const percentage = totalSpent > 0 ? ((amount / totalSpent) * 100).toFixed(1) : 0;
+                const li = document.createElement('li');
+                li.className = 'category-item';
+                li.dataset.category = category;
+                li.dataset.amount = amount;
+                li.dataset.percentage = percentage;
+                li.dataset.average = historicalData[category]?.average || amount;
+
+                li.innerHTML = `
+            <span class="category-color" style="background-color: ${categoryColors[category] || '#bab0ab'}"></span>
+            <span class="category-name">${category}</span>
+            <span class="category-amount">${formatCurrency(amount)}</span>
+            <span class="category-percent">(${percentage}%)</span>
+        `;
+
+                // Add click event
+                li.addEventListener('click', () => showCategoryDetails(category, amount, percentage, historicalData[category]?.average || amount, totalSpent));
+
+                categoryList.appendChild(li);
+            });
+        }
+
+        // Function to show details for a selected category
+        function showCategoryDetails(category, amount, percentage, average, totalSpent) {
+            // Hide empty state and show content
+            document.querySelector('.empty-state').classList.remove('active');
+            document.querySelector('.category-content').style.display = 'block';
+
+            // Update category details
+            document.getElementById('selected-category-name').textContent = category;
+            document.getElementById('category-amount-spent').textContent = formatCurrency(amount);
+            document.getElementById('category-percentage').textContent = `${percentage}%`;
+            document.getElementById('category-average').textContent = formatCurrency(average);
+
+            // Update trend bar
+            const percentDiff = ((amount - average) / average) * 100;
+            const barWidth = Math.min(Math.max(50 + (percentDiff * 2.5), 10), 90); // Scale to stay within 10-90% width
+            const trendBar = document.getElementById('trend-bar-current');
+            trendBar.style.width = `${barWidth}%`;
+
+            // Set color based on difference
+            if (percentDiff > 10) {
+                trendBar.style.backgroundColor = 'var(--danger-color)';
+            } else if (percentDiff < -10) {
+                trendBar.style.backgroundColor = 'var(--success-color)';
+            } else {
+                trendBar.style.backgroundColor = '#f59e0b'; // Orange for neutral
+            }
+
+            // Generate and display opportunities
+            const opportunitiesList = document.getElementById('category-opportunities-list');
+            opportunitiesList.innerHTML = '';
+
+            // Get category-specific opportunities
+            const opportunities = getCategoryOpportunities(category, amount, percentage, average, totalSpent);
+
+            opportunities.forEach(opportunity => {
+                const oppItem = document.createElement('div');
+                oppItem.className = 'savings-opportunity';
+                oppItem.innerHTML = `
+            <div class="opportunity-icon">${opportunity.icon}</div>
+            <div class="opportunity-details">
+                <span class="opportunity-title">${opportunity.title}</span>
+                <p class="opportunity-description">${opportunity.description}</p>
+            </div>
+        `;
+                opportunitiesList.appendChild(oppItem);
+            });
+
+            // Highlight selected category in the list
+            document.querySelectorAll('.category-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            document.querySelector(`.category-item[data-category="${category}"]`).classList.add('selected');
+        }
+
+        // Function to get opportunities based on category
+        function getCategoryOpportunities(category, amount, percentage, average, totalSpent) {
+            const opportunities = [];
+
+            // Common opportunities for all categories
+            if (amount > average) {
+                opportunities.push({
+                    icon: '📈',
+                    title: 'Above Average Spending',
+                    description: `You're spending ${((amount - average) / average * 100).toFixed(0)}% more than your usual in this category. Consider reviewing your recent expenses.`
+                });
+            }
+
+            // Category-specific opportunities
+            switch (category) {
+                case 'Bills':
+                    opportunities.push({
+                        icon: '💸',
+                        title: 'Bill Negotiation',
+                        description: 'Try negotiating your bills - many providers offer discounts when asked or when you mention competitor offers.'
+                    });
+                    opportunities.push({
+                        icon: '📑',
+                        title: 'Subscription Audit',
+                        description: 'Review all your subscriptions and cancel any you no longer use or need.'
+                    });
+                    break;
+
+                case 'Dining Out':
+                    opportunities.push({
+                        icon: '🍽️',
+                        title: 'Cook at Home',
+                        description: `Cooking at home 2 more times per month could save you approximately ${formatCurrency(amount * 0.3)}.`
+                    });
+                    opportunities.push({
+                        icon: '🎫',
+                        title: 'Use Restaurant Deals',
+                        description: 'Look for early bird specials, happy hours, or restaurant week deals to save on dining expenses.'
+                    });
+                    break;
+
+                case 'Groceries':
+                    opportunities.push({
+                        icon: '🛒',
+                        title: 'Meal Planning',
+                        description: 'Create a weekly meal plan and shopping list to reduce impulse purchases and food waste.'
+                    });
+                    opportunities.push({
+                        icon: '🏷️',
+                        title: 'Store Brands',
+                        description: 'Try store brands instead of name brands for staple items, they can be up to 30% cheaper.'
+                    });
+                    break;
+
+                case 'Rent/Mortgage':
+                    opportunities.push({
+                        icon: '🏠',
+                        title: 'Refinance Options',
+                        description: 'If you have a mortgage, check if refinancing at current rates could lower your payment.'
+                    });
+                    break;
+
+                case 'Utilities':
+                    opportunities.push({
+                        icon: '💡',
+                        title: 'Energy Audit',
+                        description: 'Consider doing an energy audit to identify ways to reduce consumption and lower bills.'
+                    });
+                    opportunities.push({
+                        icon: '🌡️',
+                        title: 'Thermostat Adjustment',
+                        description: 'Adjusting your thermostat by just 1-2 degrees can save up to 10% on energy costs.'
+                    });
+                    break;
+
+                case 'Transport':
+                    opportunities.push({
+                        icon: '🚗',
+                        title: 'Carpooling',
+                        description: 'Consider carpooling or using public transport to reduce fuel and maintenance costs.'
+                    });
+                    break;
+
+                default:
+                    opportunities.push({
+                        icon: '💰',
+                        title: 'Budget Review',
+                        description: `This category makes up ${percentage}% of your spending. Review if this aligns with your financial priorities.`
+                    });
+            }
+
+            // Add one general finance tip
+            opportunities.push({
+                icon: '💡',
+                title: '50/30/20 Rule',
+                description: 'As a general guideline, try to allocate 50% of income to needs, 30% to wants, and 20% to savings.'
+            });
+
+            return opportunities;
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOM Loaded. Initializing Budget Planner V2.");
+
+            // Create toast container if it doesn't exist
+            if (!document.getElementById('toast-container')) {
+                const toastContainer = document.createElement('div');
+                toastContainer.id = 'toast-container';
+                document.body.appendChild(toastContainer);
+            }
+
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            setTheme(savedTheme);
+
+            ['income-table', 'fixed-expenses-table', 'other-expenses-table', 'bills-table'].forEach(tableId => {
+                const table = document.getElementById(tableId);
+                if (table && !table.querySelector('tbody')) {
+                    const tbody = document.createElement('tbody');
+                    table.appendChild(tbody);
+                }
+                // Add datalists if missing
+                if (!document.getElementById(`description-list-${tableId}`)) {
+                    const dl = document.createElement('datalist');
+                    dl.id = `description-list-${tableId}`;
+                    document.body.appendChild(dl); // Or append near the table
+                }
+            });
+
+            // Add listener to month input to reload data when changed
+            const monthInput = document.getElementById('month');
+            if (monthInput) {
+                monthInput.addEventListener('change', () => {
+                    console.log("Month changed, reloading data...");
+                    loadBudgetData(); // Reload data for the newly selected month
+                });
+            } else {
+                console.error("Month input not found!");
+            }
+
+            loadBudgetData(); // Initial load (will also call ensureInitialRows and updateRecap)
+            initializeCharts(); // Set up empty charts
+
+            console.log("Initialization complete.");
+        });
+    </script>
+    </body>
+
+</html>
